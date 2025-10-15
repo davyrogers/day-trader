@@ -16,14 +16,20 @@ A Python-based workflow that replaces the n8n automation for analyzing forex new
 
 1. **Python 3.9+** installed
 2. **Ollama** installed and running locally with the required models:
-   - `gpt-oss:20b`
-   - `deepseek-r1:8b`
+   - `gpt-oss:20b` (primary analysis model)
+   - `deepseek-r1:8b` (secondary analysis model)
+   - `llama3:70b` (optional, for more diverse perspectives)
+   - `mistral:latest` (optional, for more diverse perspectives)
 
    Install models with:
    ```bash
    ollama pull gpt-oss:20b
    ollama pull deepseek-r1:8b
+   ollama pull llama3:70b
+   ollama pull mistral:latest
    ```
+
+   **Note**: The system uses multiple AI agents with different temperatures (0.7-1.0) to get diverse perspectives on the forex news. You can configure which models to use and their temperatures in the `.env` file.
 
 ### Installation
 
@@ -47,8 +53,18 @@ A Python-based workflow that replaces the n8n automation for analyzing forex new
    ```env
    # Ollama Configuration
    OLLAMA_BASE_URL=http://localhost:11434
-   OLLAMA_MODEL_20B=gpt-oss:20b
-   OLLAMA_MODEL_DEEPSEEK=deepseek-r1:8b
+   
+   # AI Analysis Configuration
+   # Comma-separated lists of models and temperatures (must match in length)
+   AI_MODELS=deepseek-r1:8b,gpt-oss:20b,gpt-oss:20b,gpt-oss:20b,llama3:70b,mistral:latest
+   AI_TEMPERATURES=0.7,0.8,0.9,1.0,0.85,0.75
+   
+   # Synthesis model (combines all agent analyses)
+   SYNTHESIS_MODEL=gpt-oss:20b
+   SYNTHESIS_TEMPERATURE=0.7
+   
+   # Execution mode: false = sequential (safer for Ollama), true = concurrent (faster)
+   RUN_CONCURRENT=false
 
    # Discord Configuration (optional but recommended)
    DISCORD_WEBHOOK_URL=your_webhook_url_here
@@ -60,6 +76,12 @@ A Python-based workflow that replaces the n8n automation for analyzing forex new
    # Logging
    LOG_LEVEL=INFO
    ```
+
+   **Configuration Notes**:
+   - **AI_MODELS**: List of Ollama models to use for analysis. Using the same model multiple times with different temperatures gives diverse perspectives.
+   - **AI_TEMPERATURES**: Controls creativity/randomness (0.0-1.0). Higher = more creative. Must match length of AI_MODELS.
+   - **RUN_CONCURRENT**: Set to `false` if your Ollama instance can't handle concurrent requests. Sequential is safer but slower.
+   - **SYNTHESIS_MODEL**: The model used to combine all agent analyses into final recommendation.
 
 ### Getting a Discord Webhook URL
 

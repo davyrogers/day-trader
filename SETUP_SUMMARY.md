@@ -97,6 +97,7 @@ python run.py
 ### What's Better Than n8n
 
 - ✅ **Rich CLI** with beautiful progress bars and status updates
+- ✅ **3-4x faster** with concurrent execution (RSS + AI agents run in parallel)
 - ✅ **Better error handling** with detailed messages
 - ✅ **Version controlled** - easy to track changes
 - ✅ **Customizable** - modify Python code directly

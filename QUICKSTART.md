@@ -8,12 +8,16 @@ pip install -r requirements.txt
 
 ## 2. Install Ollama Models
 
-Make sure Ollama is running, then:
+Make sure Ollama is running, then install the required models:
 
 ```powershell
 ollama pull gpt-oss:20b
 ollama pull deepseek-r1:8b
+ollama pull llama3:70b
+ollama pull mistral:latest
 ```
+
+**Note**: You can use any combination of models you want. The default configuration uses 6 AI agents with different models and temperatures to get diverse perspectives.
 
 ## 3. Configure Environment
 
@@ -23,11 +27,28 @@ Copy the example environment file:
 copy .env.example .env
 ```
 
-Edit `.env` and add your Discord webhook URL (optional):
+Edit `.env` and configure your AI models and Discord webhook:
 
 ```env
+# AI Analysis Configuration
+AI_MODELS=deepseek-r1:8b,gpt-oss:20b,gpt-oss:20b,gpt-oss:20b,llama3:70b,mistral:latest
+AI_TEMPERATURES=0.7,0.8,0.9,1.0,0.85,0.75
+
+# Synthesis Configuration
+SYNTHESIS_MODEL=gpt-oss:20b
+SYNTHESIS_TEMPERATURE=0.7
+
+# Execution Mode
+RUN_CONCURRENT=false  # Use false for Ollama instances that can't handle concurrent requests
+
+# Discord (optional)
 DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/YOUR_WEBHOOK_HERE
 ```
+
+**Key Configuration Options**:
+- **AI_MODELS**: Comma-separated list of Ollama models for diverse perspectives
+- **AI_TEMPERATURES**: Temperature for each model (0.7 = conservative, 1.0 = creative)
+- **RUN_CONCURRENT**: `false` = sequential (safer), `true` = concurrent (faster)
 
 ## 4. Run the Workflow
 
@@ -49,9 +70,10 @@ The workflow will:
 
 1. ✅ Display a banner
 2. 🔄 Fetch RSS feeds from 8 sources (with progress bar)
-3. 🤖 Run 4 AI analyses (with progress bar)
-4. 💬 Send results to Discord (or print to console if no webhook)
-5. ✅ Display a summary
+3. 🤖 Run multiple AI analyses with diverse models and temperatures (with progress bar)
+4. � Synthesize all agent analyses into final recommendation
+5. �💬 Send results to Discord (or print to console if no webhook)
+6. ✅ Display a summary
 
 ## Expected Output
 
@@ -69,10 +91,18 @@ Step 1: Fetching RSS Feeds
 Total articles fetched: 300
 
 Step 2: AI Analysis
-⠙ Agent 1 (DeepSeek) analyzing...
-✓ Agent 1 (DeepSeek) complete
-✓ Agent 2 (GPT-OSS) complete
-...
+
+Starting AI Analysis (Sequential Mode)
+
+Running AI analyses sequentially...
+⠙ Agent 1 (deepseek @ temp=0.7) analyzing...
+✓ Agent 1 (deepseek @ temp=0.7) complete
+✓ Agent 2 (gpt-oss @ temp=0.8) complete
+✓ Agent 3 (gpt-oss @ temp=0.9) complete
+✓ Agent 4 (gpt-oss @ temp=1.0) complete
+✓ Agent 5 (llama3 @ temp=0.85) complete
+✓ Agent 6 (mistral @ temp=0.75) complete
+✓ Synthesis complete
 
 Step 3: Sending to Discord
 ✓ Message sent to Discord successfully

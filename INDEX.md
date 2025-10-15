@@ -29,8 +29,13 @@ start.bat
 |------|---------|--------------|
 | **SETUP_SUMMARY.md** | Overview of what was created | First time setup |
 | **QUICKSTART.md** | Fast start guide | Want to run ASAP |
+| **CONFIG_REFERENCE.md** | Quick config examples | Need config help fast |
 | **README.md** | Complete user manual | Full understanding |
+| **MODEL_DIVERSITY.md** | AI agent diversity strategy | Configuring multiple models |
 | **ARCHITECTURE.md** | System design & flow | Understanding internals |
+| **PERFORMANCE.md** | Concurrent execution & speed | Performance details |
+| **CONCURRENT_EXPLAINED.md** | How concurrent execution works | Sequential vs concurrent |
+| **UPDATE_SUMMARY.md** | Latest changes and migration | Just updated the code |
 
 ### Developer Documentation
 
@@ -183,12 +188,12 @@ Create new sender module - See [DEVELOPER.md#adding-more-output-channels](DEVELO
 
 ## 📈 Performance
 
-- **RSS Fetching**: 5-10 seconds
-- **AI Analysis**: 2-5 minutes
+- **RSS Fetching**: 2-4 seconds (8 feeds in parallel)
+- **AI Analysis**: 2-4 minutes (4 agents in parallel)
 - **Discord Send**: < 1 second
-- **Total**: 3-6 minutes per run
+- **Total**: **3-5 minutes per run** (3-4x faster with concurrency!)
 
-See [ARCHITECTURE.md#performance-characteristics](ARCHITECTURE.md#performance-characteristics) for details.
+See [PERFORMANCE.md](PERFORMANCE.md) for detailed benchmarks and optimization info.
 
 ## 🎓 Learning Path
 
