@@ -21,14 +21,19 @@ class DiscordSender:
             return False
         
         try:
+            # Add separator line at the end for clarity
+            separator = "\n" + "="*50
+            content_with_separator = content + separator
+            
             # Discord has a 2000 character limit
-            if len(content) > 2000:
+            if len(content_with_separator) > 2000:
                 console.print("[yellow]Warning: Message exceeds Discord's 2000 character limit. Truncating...[/yellow]")
-                content = content[:1997] + "..."
+                # Ensure we keep the separator even when truncating
+                content_with_separator = content[:1947] + "..." + separator
             
             response = self.client.post(
                 self.webhook_url,
-                json={"content": content}
+                json={"content": content_with_separator}
             )
             response.raise_for_status()
             
