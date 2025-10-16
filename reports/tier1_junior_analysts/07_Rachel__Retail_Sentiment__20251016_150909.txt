@@ -1,0 +1,14 @@
+================================================================================
+Rachel (Retail Sentiment)
+Role: Retail Sentiment Tracker
+Timestamp: 2025-10-16 15:09:09
+================================================================================
+
+I’m ready to dive into the day’s data, but I’ll need the specific news releases and any market‑moving events that were announced today (with their exact UTC/GMT timestamps). Once you provide that, I can:
+
+1. Map out the exact timing of each event.  
+2. Break down how retail traders are likely to interpret each piece of news versus what the fundamentals actually indicate.  
+3. Pinpoint precise windows (in UTC/GMT) where a short‑EUR/USD trade that rides the prevailing trend could be most attractive.  
+4. Assign a confidence level to each idea and back it up with concrete evidence – from behavioral patterns, historical retail mis‑steps, and the news sentiment itself.
+
+Please paste the list of today’s releases (or a brief summary of the key headlines) and I’ll get the analysis rolling.

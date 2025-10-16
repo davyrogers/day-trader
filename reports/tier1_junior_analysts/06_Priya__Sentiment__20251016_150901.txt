@@ -1,0 +1,7 @@
+================================================================================
+Priya (Sentiment)
+Role: Market Sentiment Analyst
+Timestamp: 2025-10-16 15:09:01
+================================================================================
+
+I’m ready to dive into the day’s data and pull out the sentiment‑driven signals you need for EUR/USD, but I’ll need the specific news releases and market events that were scheduled today. Could you please provide the list of today’s high‑impact economic data releases, central‑bank announcements, or any other news items (with their exact UTC/GMT times) that you want me to analyze? Once I have that, I’ll give you a concise, evidence‑based view on the EUR/USD trend, timing windows, risk factors, and confidence levels.
