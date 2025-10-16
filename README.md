@@ -13,7 +13,7 @@ This system fetches news from **103 forex sources**, processes it through this A
 
 ## ✨ Key Features
 
-- � **103 RSS Feeds** from major forex news sources (FXStreet, DailyForex, Reuters, Bloomberg, etc.)
+- 📡 **103 RSS Feeds** from major forex news sources (FXStreet, DailyForex, Reuters, Bloomberg, etc.)
 - 🚦 **Rate Limiting** to prevent getting blocked by news sources
 - 🤖 **6 AI Analyst Personalities** with different models, temperatures, and focus areas:
   - Marcus (Conservative Risk Manager)
@@ -26,6 +26,7 @@ This system fetches news from **103 forex sources**, processes it through this A
   - Tier 1: Junior analysts review raw news
   - Tier 2: Senior manager synthesizes reports
   - Tier 3: Executive committee makes final decision
+- 📝 **Complete Report Saving** - All AI decisions automatically saved to `reports/` folder for review
 - 💬 **Discord Integration** with clear BLUF format output
 - 📊 **Rich CLI** with progress indicators
 - ⚡ **Concurrent or Sequential** execution modes
@@ -105,6 +106,9 @@ This system fetches news from **103 forex sources**, processes it through this A
 
 - **[QUICK_REFERENCE.md](QUICK_REFERENCE.md)** - ⚡ Quick reference card for daily use
 - **[ANALYST_CONFIG.md](ANALYST_CONFIG.md)** - 🔧 Configure your analyst team (JSON-based)
+- **[REPORTS_QUICK_REFERENCE.md](REPORTS_QUICK_REFERENCE.md)** - 📝 How to review saved AI reports
+- **[REPORT_SAVING_FEATURE.md](REPORT_SAVING_FEATURE.md)** - 📄 Report saving feature documentation
+- **[REPORTS_STRUCTURE_EXAMPLE.md](REPORTS_STRUCTURE_EXAMPLE.md)** - 📁 Example of reports folder structure
 - **[ANALYSIS_PIPELINE.md](ANALYSIS_PIPELINE.md)** - Detailed architecture of the 3-tier AI system
 - **[ANALYST_TEAM.md](ANALYST_TEAM.md)** - Meet the 6 AI analysts and their personalities
 - **[SYSTEM_FLOW.md](SYSTEM_FLOW.md)** - Visual pipeline and information flow
@@ -195,6 +199,25 @@ LOG_LEVEL=INFO
 **Configuration Notes**:
 - **RUN_CONCURRENT**: Set to `false` if your Ollama instance can't handle concurrent requests. Sequential is safer but slower.
 - **Analyst Team**: Configured in `analyst_team.json` - no need to edit code!
+
+## 📝 Reviewing AI Decisions
+
+All analyst reports are automatically saved to the `reports/` folder for your review:
+
+- **Reports are cleared on each run** - Only the latest analysis is kept
+- **Individual reports** - Every analyst's output saved separately
+- **Final summary** - Complete overview including what was sent to Discord
+- **Organized by tier** - Easy to navigate junior → senior → executive reports
+
+### Quick Access
+
+After a run, check:
+1. **`reports/FINAL_SUMMARY_*.txt`** - Complete overview and executive decisions
+2. **`reports/tier3_executive_committees/`** - Final trading decisions
+3. **`reports/tier2_senior_managers/`** - Synthesis and reasoning
+4. **`reports/tier1_junior_analysts/`** - Detailed analysis by each analyst
+
+See **[REPORTS_QUICK_REFERENCE.md](REPORTS_QUICK_REFERENCE.md)** for detailed guidance on reviewing reports.
 
 ### Getting a Discord Webhook URL
 

@@ -2,8 +2,10 @@
 import json
 import asyncio
 import os
+import shutil
 from pathlib import Path
 from typing import Dict, Any, List, Optional
+from datetime import datetime
 import httpx
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn
@@ -170,6 +172,10 @@ class ForexAnalysisPipeline:
         self.ollama_base_url = ollama_base_url
         self.run_concurrent = run_concurrent
         
+        # Setup reports directory
+        self.reports_dir = Path(__file__).parent.parent / "reports"
+        self._setup_reports_directory()
+        
         # Load team configuration from JSON
         self.team_config = TeamConfiguration(config_path)
         self.junior_analysts = self.team_config.junior_analysts
@@ -187,6 +193,48 @@ class ForexAnalysisPipeline:
         if not self.executive_committees:
             console.print("[yellow]Warning: No executive committees found in config, using last management layer[/yellow]")
             self.executive_committees = [self.team_config.management_layers[-1]] if len(self.team_config.management_layers) > 1 else []
+    
+    def _setup_reports_directory(self):
+        """Clear and setup the reports directory for a fresh run."""
+        if self.reports_dir.exists():
+            # Clear existing reports
+            shutil.rmtree(self.reports_dir)
+        
+        # Create fresh directory structure
+        self.reports_dir.mkdir(exist_ok=True)
+        (self.reports_dir / "tier1_junior_analysts").mkdir(exist_ok=True)
+        (self.reports_dir / "tier2_senior_managers").mkdir(exist_ok=True)
+        (self.reports_dir / "tier3_executive_committees").mkdir(exist_ok=True)
+        
+        console.print(f"[green]✓[/green] Reports directory cleared and ready: {self.reports_dir}")
+    
+    def _save_report(self, tier: str, name: str, role: str, content: str, order: int = None):
+        """Save an individual report to the reports directory."""
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        
+        # Sanitize filename
+        safe_name = "".join(c if c.isalnum() or c in (' ', '_', '-') else '_' for c in name)
+        safe_name = safe_name.replace(' ', '_')
+        
+        # Build filename with order if provided
+        if order is not None:
+            filename = f"{order:02d}_{safe_name}_{timestamp}.txt"
+        else:
+            filename = f"{safe_name}_{timestamp}.txt"
+        
+        filepath = self.reports_dir / tier / filename
+        
+        # Write report with header
+        with open(filepath, 'w', encoding='utf-8') as f:
+            f.write(f"{'='*80}\n")
+            f.write(f"{name}\n")
+            f.write(f"Role: {role}\n")
+            f.write(f"Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+            f.write(f"{'='*80}\n\n")
+            f.write(content)
+        
+        console.print(f"[dim]  → Saved report: {filepath.name}[/dim]")
+
     
     def analyze_news(self, aggregated_data: Dict[str, Any]) -> str:
         """Run multi-tier analysis: Junior Analysts → Senior Managers → Executive Committees."""
@@ -226,7 +274,7 @@ class ForexAnalysisPipeline:
             console.print("[bold yellow]═══ TIER 1: JUNIOR ANALYSTS ═══[/bold yellow]")
             junior_reports = []
             
-            for analyst in self.junior_analysts:
+            for idx, analyst in enumerate(self.junior_analysts, 1):
                 progress.update(task, description=f"[cyan]{analyst.name} analyzing...")
                 
                 # Use analyst's configured system prompt
@@ -239,6 +287,9 @@ class ForexAnalysisPipeline:
                 )
                 
                 result = asyncio.run(analyzer.analyze_async(prompt, aggregated_data))
+                
+                # Save individual report
+                self._save_report("tier1_junior_analysts", analyst.name, analyst.role, result, order=idx)
                 
                 junior_reports.append({
                     "analyst": analyst.name,
@@ -257,7 +308,7 @@ class ForexAnalysisPipeline:
             console.print(f"\n[bold yellow]═══ TIER 2: SENIOR MANAGERS ({len(self.senior_managers)} Managers) ═══[/bold yellow]")
             senior_reports = []
             
-            for manager in self.senior_managers:
+            for idx, manager in enumerate(self.senior_managers, 1):
                 progress.update(task, description=f"[cyan]{manager.name} synthesizing...")
                 
                 senior_data = {"data": junior_reports}
@@ -273,6 +324,9 @@ class ForexAnalysisPipeline:
                 senior_report = asyncio.run(
                     senior_analyzer.analyze_async(manager_prompt, senior_data)
                 )
+                
+                # Save individual report
+                self._save_report("tier2_senior_managers", manager.name, manager.role, senior_report, order=idx)
                 
                 senior_reports.append({
                     "manager": manager.name,
@@ -290,7 +344,7 @@ class ForexAnalysisPipeline:
             console.print(f"\n[bold yellow]═══ TIER 3: EXECUTIVE COMMITTEES ({len(self.executive_committees)} Committees) ═══[/bold yellow]")
             final_decisions = []
             
-            for committee in self.executive_committees:
+            for idx, committee in enumerate(self.executive_committees, 1):
                 progress.update(task, description=f"[cyan]{committee.name} deliberating...")
                 
                 executive_data = {
@@ -313,6 +367,9 @@ class ForexAnalysisPipeline:
                     executive_analyzer.analyze_async(committee_prompt, executive_data)
                 )
                 
+                # Save individual report
+                self._save_report("tier3_executive_committees", committee.name, committee.role, final_decision, order=idx)
+                
                 final_decisions.append({
                     "committee": committee.name,
                     "role": committee.role,
@@ -334,6 +391,9 @@ class ForexAnalysisPipeline:
             result += "\n"
         
         result += "\n" + "="*80 + "\n"
+        
+        # Save final summary (sequential mode)
+        self._save_final_summary(result, junior_reports, senior_reports, final_decisions)
         
         return result
     
@@ -379,12 +439,16 @@ class ForexAnalysisPipeline:
             analyst_results = await asyncio.gather(*analyst_tasks, return_exceptions=True)
             
             junior_reports = []
-            for result in analyst_results:
+            for idx, result in enumerate(analyst_results, 1):
                 if isinstance(result, Exception):
                     console.print(f"[red]✗[/red] Analyst failed: {str(result)}")
                     continue
                 
                 analyst_name, analyst_role, focus_area, output = result
+                
+                # Save individual report
+                self._save_report("tier1_junior_analysts", analyst_name, analyst_role, output, order=idx)
+                
                 junior_reports.append({
                     "analyst": analyst_name,
                     "role": analyst_role,
@@ -420,12 +484,16 @@ class ForexAnalysisPipeline:
             manager_results = await asyncio.gather(*manager_tasks, return_exceptions=True)
             
             senior_reports = []
-            for result in manager_results:
+            for idx, result in enumerate(manager_results, 1):
                 if isinstance(result, Exception):
                     console.print(f"[red]✗[/red] Manager failed: {str(result)}")
                     continue
                 
                 manager_name, manager_role, output = result
+                
+                # Save individual report
+                self._save_report("tier2_senior_managers", manager_name, manager_role, output, order=idx)
+                
                 senior_reports.append({
                     "manager": manager_name,
                     "role": manager_role,
@@ -467,12 +535,16 @@ class ForexAnalysisPipeline:
             committee_results = await asyncio.gather(*committee_tasks, return_exceptions=True)
             
             final_decisions = []
-            for result in committee_results:
+            for idx, result in enumerate(committee_results, 1):
                 if isinstance(result, Exception):
                     console.print(f"[red]✗[/red] Committee failed: {str(result)}")
                     continue
                 
                 committee_name, committee_role, output = result
+                
+                # Save individual report
+                self._save_report("tier3_executive_committees", committee_name, committee_role, output, order=idx)
+                
                 final_decisions.append({
                     "committee": committee_name,
                     "role": committee_role,
@@ -495,6 +567,9 @@ class ForexAnalysisPipeline:
         
         result += "\n" + "="*80 + "\n"
         
+        # Save final summary (concurrent mode)
+        self._save_final_summary(result, junior_reports, senior_reports, final_decisions)
+        
         return result
     
     async def _run_junior_analyst(self, analyst: AnalystProfile, analyzer: OllamaAnalyzer, 
@@ -514,4 +589,38 @@ class ForexAnalysisPipeline:
         """Run a single executive committee review asynchronously."""
         result = await analyzer.analyze_async(prompt, data)
         return (committee.name, committee.role, result)
+    
+    def _save_final_summary(self, result: str, junior_reports: List[Dict], 
+                           senior_reports: List[Dict], final_decisions: List[Dict]):
+        """Save a comprehensive summary of the entire analysis run."""
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filepath = self.reports_dir / f"FINAL_SUMMARY_{timestamp}.txt"
+        
+        with open(filepath, 'w', encoding='utf-8') as f:
+            f.write(f"{'='*80}\n")
+            f.write(f"COMPLETE ANALYSIS SUMMARY\n")
+            f.write(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+            f.write(f"{'='*80}\n\n")
+            
+            f.write(f"PIPELINE STATISTICS:\n")
+            f.write(f"  • Junior Analysts: {len(junior_reports)}\n")
+            f.write(f"  • Senior Managers: {len(senior_reports)}\n")
+            f.write(f"  • Executive Committees: {len(final_decisions)}\n\n")
+            
+            f.write(f"{'='*80}\n")
+            f.write(f"EXECUTIVE DECISIONS (SENT TO DISCORD)\n")
+            f.write(f"{'='*80}\n")
+            f.write(result)
+            
+            f.write(f"\n\n{'='*80}\n")
+            f.write(f"DETAILED BREAKDOWN\n")
+            f.write(f"{'='*80}\n\n")
+            
+            f.write(f"All individual reports are saved in:\n")
+            f.write(f"  • {self.reports_dir / 'tier1_junior_analysts'}\n")
+            f.write(f"  • {self.reports_dir / 'tier2_senior_managers'}\n")
+            f.write(f"  • {self.reports_dir / 'tier3_executive_committees'}\n")
+        
+        console.print(f"\n[bold green]✓ Complete analysis saved to: {filepath}[/bold green]")
+
 
