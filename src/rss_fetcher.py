@@ -5,8 +5,14 @@ import httpx
 from typing import List, Dict, Any
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
+import random
 
 console = Console()
+
+# Rate limiting configuration
+MAX_CONCURRENT_REQUESTS = 10  # Max simultaneous requests
+REQUEST_DELAY_MIN = 0.1  # Minimum delay between requests (seconds)
+REQUEST_DELAY_MAX = 0.3  # Maximum delay between requests (seconds)
 
 
 class RSSFeed:
@@ -16,12 +22,28 @@ class RSSFeed:
         self.name = name
         self.url = url
     
-    async def fetch_async(self) -> List[Dict[str, Any]]:
-        """Fetch and parse the RSS feed asynchronously."""
+    async def fetch_async(self, semaphore: asyncio.Semaphore = None) -> List[Dict[str, Any]]:
+        """Fetch and parse the RSS feed asynchronously with rate limiting."""
+        # Add random delay to spread out requests
+        await asyncio.sleep(random.uniform(REQUEST_DELAY_MIN, REQUEST_DELAY_MAX))
+        
+        # Use semaphore if provided to limit concurrent requests
+        if semaphore:
+            async with semaphore:
+                return await self._do_fetch()
+        else:
+            return await self._do_fetch()
+    
+    async def _do_fetch(self) -> List[Dict[str, Any]]:
+        """Internal method to perform the actual fetch."""
         try:
-            # Fetch the feed content asynchronously
-            async with httpx.AsyncClient(timeout=30.0) as client:
-                response = await client.get(self.url)
+            # Fetch the feed content asynchronously with custom headers
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                'Accept': 'application/rss+xml, application/xml, text/xml, */*',
+            }
+            async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
+                response = await client.get(self.url, headers=headers)
                 response.raise_for_status()
                 feed_content = response.text
             
@@ -244,9 +266,12 @@ class RSSFeedAggregator:
         return asyncio.run(self._fetch_all_async())
     
     async def _fetch_all_async(self) -> Dict[str, List[Dict[str, Any]]]:
-        """Internal async method to fetch all feeds concurrently."""
+        """Internal async method to fetch all feeds concurrently with rate limiting."""
         all_entries = []
         results = {}
+        
+        # Create semaphore to limit concurrent requests
+        semaphore = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS)
         
         with Progress(
             SpinnerColumn(),
@@ -255,11 +280,11 @@ class RSSFeedAggregator:
         ) as progress:
             task = progress.add_task("[cyan]Fetching RSS feeds concurrently...", total=len(self.feeds))
             
-            # Create tasks for all feeds
-            console.print(f"[dim]Fetching {len(self.feeds)} feeds in parallel...[/dim]")
-            feed_tasks = [feed.fetch_async() for feed in self.feeds]
+            # Create tasks for all feeds with rate limiting
+            console.print(f"[dim]Fetching {len(self.feeds)} feeds with rate limiting (max {MAX_CONCURRENT_REQUESTS} concurrent)...[/dim]")
+            feed_tasks = [feed.fetch_async(semaphore) for feed in self.feeds]
             
-            # Fetch all feeds concurrently
+            # Fetch all feeds concurrently with rate limiting
             feed_results = await asyncio.gather(*feed_tasks, return_exceptions=True)
             
             # Process results
