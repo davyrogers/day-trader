@@ -61,14 +61,83 @@ class RSSFeedAggregator:
     
     def __init__(self):
         self.feeds = [
+            # FXStreet - Comprehensive forex coverage
             RSSFeed("FXStreet - News", "https://www.fxstreet.com/rss/news"),
             RSSFeed("FXStreet - Analysis", "https://www.fxstreet.com/rss/analysis"),
-            RSSFeed("InvestingLive", "https://investinglive.com/feed"),
+            
+            # DailyForex - Multiple analysis perspectives
             RSSFeed("DailyForex - Forex News", "https://www.dailyforex.com/rss/forexnews.xml"),
             RSSFeed("DailyForex - Technical Analysis", "https://www.dailyforex.com/rss/technicalanalysis.xml"),
             RSSFeed("DailyForex - Fundamental Analysis", "https://www.dailyforex.com/rss/fundamentalanalysis.xml"),
             RSSFeed("DailyForex - Forex Articles", "https://www.dailyforex.com/rss/forexarticles.xml"),
+            
+            # Investing.com - Major financial news platform
+            RSSFeed("InvestingLive", "https://investinglive.com/feed"),
+            RSSFeed("Investing.com - Forex News", "https://www.investing.com/rss/news_301.rss"),
+            RSSFeed("Investing.com - Economic Indicators", "https://www.investing.com/rss/news_95.rss"),
+            RSSFeed("Investing.com - Market Overview", "https://www.investing.com/rss/news_1.rss"),
+            
+            # ForexLive - Real-time forex commentary
+            RSSFeed("ForexLive", "https://www.forexlive.com/feed/news"),
+            
+            # Reuters - Business & Finance
+            RSSFeed("Reuters - Markets", "https://www.reutersagency.com/feed/?taxonomy=best-topics&post_type=best"),
+            
+            # Bloomberg via Yahoo Finance
+            RSSFeed("Yahoo Finance - Forex", "https://finance.yahoo.com/news/rssindex"),
+            
+            # FX Empire - Multi-asset coverage
+            RSSFeed("FX Empire - Forex", "https://www.fxempire.com/api/v1/en/articles/rss"),
+            
+            # Action Forex
+            RSSFeed("Action Forex - News", "https://www.actionforex.com/feed/"),
+            
+            # ForexFactory (if available)
+            RSSFeed("Forex Factory News", "https://www.forexfactory.com/feed.php"),
+            
+            # MarketWatch
+            RSSFeed("MarketWatch - Currencies", "https://www.marketwatch.com/rss/currencies"),
+            RSSFeed("MarketWatch - Markets", "https://www.marketwatch.com/rss/markets"),
+            
+            # Financial Times
+            RSSFeed("FT - Markets", "https://www.ft.com/markets?format=rss"),
+            RSSFeed("FT - Currencies", "https://www.ft.com/currencies?format=rss"),
+            
+            # TradingView Ideas
+            RSSFeed("TradingView - Forex Ideas", "https://www.tradingview.com/feed/"),
+            
+            # ForexCrunch
+            RSSFeed("ForexCrunch", "https://www.forexcrunch.com/feed/"),
+            
+            # FXCM Insights
+            RSSFeed("FXCM Insights", "https://www.fxcm.com/insights/feed/"),
+            
+            # Forex.com News
+            RSSFeed("Forex.com - Market News", "https://www.forex.com/en-us/news-and-analysis/feed/"),
+            
+            # DailyFX
+            RSSFeed("DailyFX", "https://www.dailyfx.com/feeds/market-news"),
+            
+            # Newsquawk
             RSSFeed("Newsquawk", "https://newsquawk.com/blog/feed.rss"),
+            
+            # OANDA - Market Insights
+            RSSFeed("OANDA - News", "https://www.oanda.com/rw-en/blog/feed/"),
+            
+            # Benzinga Forex
+            RSSFeed("Benzinga - Forex", "https://www.benzinga.com/feed"),
+            
+            # ZeroHedge - Alternative perspective
+            RSSFeed("ZeroHedge", "https://feeds.feedburner.com/zerohedge/feed"),
+            
+            # Kitco - Precious metals (affects forex)
+            RSSFeed("Kitco News", "https://www.kitco.com/rss/KitcoNews.xml"),
+            
+            # Central Bank News
+            RSSFeed("Central Bank News", "https://www.centralbanksnews.info/feed"),
+            
+            # ForexNews.com
+            RSSFeed("ForexNews.com", "https://www.forex.com/en-us/news-and-analysis/feed/"),
         ]
     
     def fetch_all(self) -> Dict[str, List[Dict[str, Any]]]:
