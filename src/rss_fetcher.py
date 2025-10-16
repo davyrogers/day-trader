@@ -3,16 +3,21 @@ import feedparser
 import asyncio
 import httpx
 from typing import List, Dict, Any
+from urllib.parse import urlparse
+from collections import defaultdict
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 import random
 
 console = Console()
 
-# Rate limiting configuration
-MAX_CONCURRENT_REQUESTS = 10  # Max simultaneous requests
+# Rate limiting configuration - PER DOMAIN
+MAX_CONCURRENT_PER_DOMAIN = 2  # Max simultaneous requests per domain
 REQUEST_DELAY_MIN = 0.1  # Minimum delay between requests (seconds)
 REQUEST_DELAY_MAX = 0.3  # Maximum delay between requests (seconds)
+
+# Global domain semaphores
+_domain_semaphores = defaultdict(lambda: asyncio.Semaphore(MAX_CONCURRENT_PER_DOMAIN))
 
 
 class RSSFeed:
@@ -21,17 +26,16 @@ class RSSFeed:
     def __init__(self, name: str, url: str):
         self.name = name
         self.url = url
+        self.domain = urlparse(url).netloc
     
-    async def fetch_async(self, semaphore: asyncio.Semaphore = None) -> List[Dict[str, Any]]:
-        """Fetch and parse the RSS feed asynchronously with rate limiting."""
+    async def fetch_async(self) -> List[Dict[str, Any]]:
+        """Fetch and parse the RSS feed asynchronously with per-domain rate limiting."""
         # Add random delay to spread out requests
         await asyncio.sleep(random.uniform(REQUEST_DELAY_MIN, REQUEST_DELAY_MAX))
         
-        # Use semaphore if provided to limit concurrent requests
-        if semaphore:
-            async with semaphore:
-                return await self._do_fetch()
-        else:
+        # Use per-domain semaphore to limit concurrent requests to same domain
+        semaphore = _domain_semaphores[self.domain]
+        async with semaphore:
             return await self._do_fetch()
     
     async def _do_fetch(self) -> List[Dict[str, Any]]:
@@ -266,12 +270,12 @@ class RSSFeedAggregator:
         return asyncio.run(self._fetch_all_async())
     
     async def _fetch_all_async(self) -> Dict[str, List[Dict[str, Any]]]:
-        """Internal async method to fetch all feeds concurrently with rate limiting."""
+        """Internal async method to fetch all feeds concurrently with per-domain rate limiting."""
         all_entries = []
         results = {}
         
-        # Create semaphore to limit concurrent requests
-        semaphore = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS)
+        # Count unique domains
+        domains = set(feed.domain for feed in self.feeds)
         
         with Progress(
             SpinnerColumn(),
@@ -280,11 +284,11 @@ class RSSFeedAggregator:
         ) as progress:
             task = progress.add_task("[cyan]Fetching RSS feeds concurrently...", total=len(self.feeds))
             
-            # Create tasks for all feeds with rate limiting
-            console.print(f"[dim]Fetching {len(self.feeds)} feeds with rate limiting (max {MAX_CONCURRENT_REQUESTS} concurrent)...[/dim]")
-            feed_tasks = [feed.fetch_async(semaphore) for feed in self.feeds]
+            # Create tasks for all feeds with per-domain rate limiting
+            console.print(f"[dim]Fetching {len(self.feeds)} feeds from {len(domains)} domains (max {MAX_CONCURRENT_PER_DOMAIN} per domain)...[/dim]")
+            feed_tasks = [feed.fetch_async() for feed in self.feeds]
             
-            # Fetch all feeds concurrently with rate limiting
+            # Fetch all feeds concurrently with per-domain rate limiting
             feed_results = await asyncio.gather(*feed_tasks, return_exceptions=True)
             
             # Process results
