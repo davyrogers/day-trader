@@ -8,7 +8,7 @@ import httpx
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn
 from dataclasses import dataclass
-from .market_data import MarketDataFetcher, extract_instrument_from_news
+from market_data import MarketDataFetcher, extract_instrument_from_news
 
 console = Console()
 
