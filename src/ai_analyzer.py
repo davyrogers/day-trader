@@ -1,6 +1,8 @@
 """AI analysis module using Ollama for forex news analysis."""
 import json
 import asyncio
+import os
+from pathlib import Path
 from typing import Dict, Any, List, Optional
 import httpx
 from rich.console import Console
@@ -19,90 +21,96 @@ class AnalystProfile:
     model: str
     temperature: float
     focus_area: str
-    
-    
-class AIAnalystTeam:
-    """Defines the team of junior analysts with diverse perspectives."""
-    
-    ANALYSTS = [
-        AnalystProfile(
-            name="Marcus (Conservative)",
-            role="Risk Management Specialist",
-            personality="Conservative, risk-averse, focuses on downside protection",
-            model="llama3.2:latest",
-            temperature=0.3,
-            focus_area="Risk assessment and capital preservation"
-        ),
-        AnalystProfile(
-            name="Sarah (Technical)",
-            role="Technical Analysis Expert",
-            personality="Data-driven, pattern-focused, relies on technical indicators",
-            model="qwen2.5:latest",
-            temperature=0.5,
-            focus_area="Chart patterns, support/resistance levels, technical signals"
-        ),
-        AnalystProfile(
-            name="James (Aggressive)",
-            role="Momentum Trader",
-            personality="Aggressive, opportunity-seeking, high-conviction trades",
-            model="mistral:latest",
-            temperature=0.8,
-            focus_area="High-probability momentum plays and breakouts"
-        ),
-        AnalystProfile(
-            name="Elena (Fundamental)",
-            role="Economic Policy Analyst",
-            personality="Fundamental-focused, macro-economic perspective, central bank watcher",
-            model="llama3.2:latest",
-            temperature=0.4,
-            focus_area="Economic indicators, central bank policy, geopolitical events"
-        ),
-        AnalystProfile(
-            name="David (Contrarian)",
-            role="Contrarian Strategist",
-            personality="Skeptical, contrarian, questions consensus views",
-            model="gemma2:latest",
-            temperature=0.7,
-            focus_area="Identifying overcrowded trades and contrary indicators"
-        ),
-        AnalystProfile(
-            name="Priya (Sentiment)",
-            role="Market Sentiment Analyst",
-            personality="Sentiment-focused, reads market mood, tracks positioning",
-            model="phi3:latest",
-            temperature=0.6,
-            focus_area="Market sentiment, trader positioning, fear/greed indicators"
-        ),
-    ]
+    system_prompt: str
     
     @classmethod
-    def get_analyst_prompt(cls, analyst: AnalystProfile) -> str:
-        """Generate a personalized prompt for each analyst."""
-        return f"""You are {analyst.name}, a {analyst.role} on a professional forex trading desk.
+    def from_dict(cls, data: dict) -> 'AnalystProfile':
+        """Create AnalystProfile from dictionary."""
+        return cls(
+            name=data['name'],
+            role=data['role'],
+            personality=data['personality'],
+            model=data['model'],
+            temperature=data['temperature'],
+            focus_area=data['focus_area'],
+            system_prompt=data['system_prompt']
+        )
 
-PERSONALITY: {analyst.personality}
-YOUR FOCUS: {analyst.focus_area}
 
-Today's market news is below. Review it from YOUR unique perspective and provide YOUR professional opinion.
+@dataclass
+class ManagementLayer:
+    """Defines a management layer (Senior Manager or Executive Committee)."""
+    name: str
+    role: str
+    model: str
+    temperature: float
+    system_prompt: str
+    
+    @classmethod
+    def from_dict(cls, data: dict) -> 'ManagementLayer':
+        """Create ManagementLayer from dictionary."""
+        return cls(
+            name=data['name'],
+            role=data['role'],
+            model=data['model'],
+            temperature=data['temperature'],
+            system_prompt=data['system_prompt']
+        )
 
-CRITICAL REQUIREMENTS:
-- Focus on EUR/USD trading opportunities (we primarily short EUR/USD with the trend)
-- Identify SPECIFIC timing windows for potential trades (exact times in UTC/GMT)
-- Note any high-impact economic data releases with precise times
-- Flag volatility risks and time periods to avoid trading
-- We trade WITH major trends, never against them
-- Look for news-driven opportunities for small, lower-risk profits
 
-YOUR ANALYSIS MUST INCLUDE:
-1. Key news events TODAY with EXACT TIMES
-2. Your view on EUR/USD direction and timing
-3. Risk factors specific to your expertise
-4. Confidence level (Low/Medium/High) for any trade ideas
-
-NEWS DATA:
-{{{{ JSON.stringify($json.data, null, 2) }}}}
-
-REMEMBER: You're reporting to senior management. Be professional but concise. If you see nothing actionable, say so clearly."""
+class TeamConfiguration:
+    """Loads and manages analyst team configuration from JSON."""
+    
+    def __init__(self, config_path: Optional[str] = None):
+        if config_path is None:
+            # Default to analyst_team.json in project root
+            current_dir = Path(__file__).parent.parent
+            config_path = current_dir / "analyst_team.json"
+        
+        self.config_path = Path(config_path)
+        self.junior_analysts: List[AnalystProfile] = []
+        self.management_layers: List[ManagementLayer] = []
+        self._load_config()
+    
+    def _load_config(self):
+        """Load configuration from JSON file."""
+        try:
+            with open(self.config_path, 'r', encoding='utf-8') as f:
+                config = json.load(f)
+            
+            # Load junior analysts
+            for analyst_data in config.get('junior_analysts', []):
+                self.junior_analysts.append(AnalystProfile.from_dict(analyst_data))
+            
+            # Load management layers
+            for mgmt_data in config.get('management_layers', []):
+                self.management_layers.append(ManagementLayer.from_dict(mgmt_data))
+            
+            console.print(f"[green]✓[/green] Loaded {len(self.junior_analysts)} analysts and {len(self.management_layers)} management layers from config")
+            
+        except FileNotFoundError:
+            console.print(f"[red]Error: Configuration file not found at {self.config_path}[/red]")
+            raise
+        except json.JSONDecodeError as e:
+            console.print(f"[red]Error parsing configuration JSON: {e}[/red]")
+            raise
+        except Exception as e:
+            console.print(f"[red]Error loading configuration: {e}[/red]")
+            raise
+    
+    def get_senior_manager(self) -> Optional[ManagementLayer]:
+        """Get the senior manager layer."""
+        for layer in self.management_layers:
+            if 'senior' in layer.name.lower() or 'manager' in layer.name.lower():
+                return layer
+        return self.management_layers[0] if self.management_layers else None
+    
+    def get_executive_committee(self) -> Optional[ManagementLayer]:
+        """Get the executive committee layer."""
+        for layer in self.management_layers:
+            if 'executive' in layer.name.lower() or 'committee' in layer.name.lower():
+                return layer
+        return self.management_layers[-1] if len(self.management_layers) > 1 else None
 
 
 class OllamaAnalyzer:
@@ -157,86 +165,20 @@ class OllamaAnalyzer:
 class ForexAnalysisPipeline:
     """Orchestrates multi-tier AI analysis with junior analysts, senior synthesis, and executive review."""
     
-    SENIOR_SYNTHESIS_PROMPT = """You are the SENIOR TRADING MANAGER reviewing reports from your team of 6 junior analysts.
-
-Each analyst has provided their perspective on today's forex market (focusing on EUR/USD). Your job is to:
-
-1. SYNTHESIZE their views into a coherent picture
-2. IDENTIFY points of agreement and disagreement
-3. NOTE any time-specific opportunities they've flagged
-4. FILTER OUT noise and conflicting signals
-5. HIGHLIGHT consensus trade ideas with specific timing
-
-ANALYST REPORTS:
-{{ JSON.stringify($json.data, null, 2) }}
-
-SENIOR MANAGER OUTPUT REQUIREMENTS:
-- Consolidate the key events and times mentioned by multiple analysts
-- Identify if there's consensus on EUR/USD direction
-- Note divergent views and explain why they differ
-- Recommend IF we should be watching for a trade opportunity today
-- Specify WHEN (exact time windows in UTC/GMT)
-- Keep it professional but concise - this goes to the executive committee
-
-If analysts disagree significantly, note this and explain both sides."""
-
-    EXECUTIVE_COMMITTEE_PROMPT = """You are the EXECUTIVE TRADING COMMITTEE (3 senior partners) reviewing the consolidated report from your senior manager.
-
-The senior manager has synthesized input from 6 junior analysts. Now you must make the FINAL DECISION on actionable trades.
-
-SENIOR MANAGER'S REPORT:
-{{ JSON.stringify($json.data, null, 2) }}
-
-YOUR EXECUTIVE RESPONSIBILITIES:
-1. DEBATE the merits of any proposed trades among yourselves
-2. VERIFY timing and risk/reward calculations  
-3. FILTER OUT any remaining noise or uncertain signals
-4. BUILD CONSENSUS on specific trade recommendations
-5. PROVIDE CLEAR, ACTIONABLE GUIDANCE
-
-OUTPUT FORMAT FOR DISCORD (Character limit: keep it tight!):
-━━━━━━━━━━━━━━━━━━━━
-🎯 TRADING SIGNAL - [DATE]
-━━━━━━━━━━━━━━━━━━━━
-
-📊 CONSENSUS: [Clear Yes/No/Watch on trade opportunity]
-
-⏰ KEY TIMES (UTC):
-[List 2-3 most critical time windows only]
-
-💹 TRADE SETUP (if applicable):
-Pair: EUR/USD
-Direction: [Long/Short]
-Entry timing: [Specific time window]
-Risk: £X on £100 position
-Reward: £Y potential
-Odds: [X%] based on [reason]
-
-⚠️ RISKS:
-[Top 2-3 risks only]
-
-🎲 EXECUTIVE DECISION:
-[Clear 2-3 sentence recommendation - what should trader DO today]
-
-━━━━━━━━━━━━━━━━━━━━
-
-CRITICAL RULES:
-- Use BLUF format (bottom line up front)
-- Explain ALL acronyms in parentheses  
-- Base risk/reward on £100 un-leveraged position
-- If consensus is "NO TRADE", say why clearly
-- If committee is divided, note the split and give majority view
-- Keep total message under 1500 characters for Discord"""
-
-    def __init__(self, ollama_base_url: str, run_concurrent: bool):
+    def __init__(self, ollama_base_url: str, run_concurrent: bool, config_path: Optional[str] = None):
         self.ollama_base_url = ollama_base_url
         self.run_concurrent = run_concurrent
-        self.junior_analysts = AIAnalystTeam.ANALYSTS
-        # Senior and Executive use more stable, analytical models
-        self.senior_model = "llama3.2:latest"
-        self.senior_temp = 0.4
-        self.executive_model = "llama3.2:latest" 
-        self.executive_temp = 0.3  # Very conservative for final decisions
+        
+        # Load team configuration from JSON
+        self.team_config = TeamConfiguration(config_path)
+        self.junior_analysts = self.team_config.junior_analysts
+        self.senior_manager = self.team_config.get_senior_manager()
+        self.executive_committee = self.team_config.get_executive_committee()
+        
+        if not self.senior_manager:
+            console.print("[yellow]Warning: No senior manager found in config, using default[/yellow]")
+        if not self.executive_committee:
+            console.print("[yellow]Warning: No executive committee found in config, using default[/yellow]")
     
     def analyze_news(self, aggregated_data: Dict[str, Any]) -> str:
         """Run three-tier analysis: Junior Analysts → Senior Manager → Executive Committee."""
@@ -272,7 +214,8 @@ CRITICAL RULES:
             for analyst in self.junior_analysts:
                 progress.update(task, description=f"[cyan]{analyst.name} analyzing...")
                 
-                prompt = AIAnalystTeam.get_analyst_prompt(analyst)
+                # Use analyst's configured system prompt
+                prompt = analyst.system_prompt
                 analyzer = OllamaAnalyzer(
                     self.ollama_base_url, 
                     analyst.model, 
@@ -292,36 +235,44 @@ CRITICAL RULES:
                 console.print(f"[green]✓[/green] {analyst.name} report complete")
             
             # TIER 2: Senior Manager Synthesis
+            if not self.senior_manager:
+                console.print("[red]Error: No senior manager configured[/red]")
+                return "Configuration error: No senior manager found"
+            
             console.print("\n[bold yellow]═══ TIER 2: SENIOR MANAGER ═══[/bold yellow]")
             progress.update(task, description="[cyan]Senior Manager synthesizing reports...")
             
             senior_data = {"data": junior_reports}
             senior_analyzer = OllamaAnalyzer(
                 self.ollama_base_url,
-                self.senior_model,
-                self.senior_temp
+                self.senior_manager.model,
+                self.senior_manager.temperature
             )
             senior_report = asyncio.run(
-                senior_analyzer.analyze_async(self.SENIOR_SYNTHESIS_PROMPT, senior_data)
+                senior_analyzer.analyze_async(self.senior_manager.system_prompt, senior_data)
             )
             progress.advance(task)
-            console.print(f"[green]✓[/green] Senior Manager synthesis complete")
+            console.print(f"[green]✓[/green] {self.senior_manager.name} synthesis complete")
             
             # TIER 3: Executive Committee Final Review
+            if not self.executive_committee:
+                console.print("[red]Error: No executive committee configured[/red]")
+                return senior_report  # Return senior report if no exec committee
+            
             console.print("\n[bold yellow]═══ TIER 3: EXECUTIVE COMMITTEE ═══[/bold yellow]")
             progress.update(task, description="[cyan]Executive Committee deliberating...")
             
             executive_data = {"data": {"senior_report": senior_report, "analyst_count": len(junior_reports)}}
             executive_analyzer = OllamaAnalyzer(
                 self.ollama_base_url,
-                self.executive_model,
-                self.executive_temp
+                self.executive_committee.model,
+                self.executive_committee.temperature
             )
             final_decision = asyncio.run(
-                executive_analyzer.analyze_async(self.EXECUTIVE_COMMITTEE_PROMPT, executive_data)
+                executive_analyzer.analyze_async(self.executive_committee.system_prompt, executive_data)
             )
             progress.advance(task)
-            console.print(f"[green]✓[/green] Executive Committee decision complete\n")
+            console.print(f"[green]✓[/green] {self.executive_committee.name} decision complete\n")
         
         return final_decision
     
@@ -344,7 +295,8 @@ CRITICAL RULES:
             
             analyst_tasks = []
             for analyst in self.junior_analysts:
-                prompt = AIAnalystTeam.get_analyst_prompt(analyst)
+                # Use analyst's configured system prompt
+                prompt = analyst.system_prompt
                 analyzer = OllamaAnalyzer(
                     self.ollama_base_url,
                     analyst.model,
@@ -375,36 +327,44 @@ CRITICAL RULES:
                 console.print(f"[green]✓[/green] {analyst_name} report complete")
             
             # TIER 2: Senior Manager Synthesis
+            if not self.senior_manager:
+                console.print("[red]Error: No senior manager configured[/red]")
+                return "Configuration error: No senior manager found"
+            
             console.print("\n[bold yellow]═══ TIER 2: SENIOR MANAGER ═══[/bold yellow]")
             progress.update(task, description="[cyan]Senior Manager synthesizing reports...")
             
             senior_data = {"data": junior_reports}
             senior_analyzer = OllamaAnalyzer(
                 self.ollama_base_url,
-                self.senior_model,
-                self.senior_temp
+                self.senior_manager.model,
+                self.senior_manager.temperature
             )
             senior_report = await senior_analyzer.analyze_async(
-                self.SENIOR_SYNTHESIS_PROMPT, senior_data
+                self.senior_manager.system_prompt, senior_data
             )
             progress.advance(task)
-            console.print(f"[green]✓[/green] Senior Manager synthesis complete")
+            console.print(f"[green]✓[/green] {self.senior_manager.name} synthesis complete")
             
             # TIER 3: Executive Committee Final Review
+            if not self.executive_committee:
+                console.print("[red]Error: No executive committee configured[/red]")
+                return senior_report  # Return senior report if no exec committee
+            
             console.print("\n[bold yellow]═══ TIER 3: EXECUTIVE COMMITTEE ═══[/bold yellow]")
             progress.update(task, description="[cyan]Executive Committee deliberating...")
             
             executive_data = {"data": {"senior_report": senior_report, "analyst_count": len(junior_reports)}}
             executive_analyzer = OllamaAnalyzer(
                 self.ollama_base_url,
-                self.executive_model,
-                self.executive_temp
+                self.executive_committee.model,
+                self.executive_committee.temperature
             )
             final_decision = await executive_analyzer.analyze_async(
-                self.EXECUTIVE_COMMITTEE_PROMPT, executive_data
+                self.executive_committee.system_prompt, executive_data
             )
             progress.advance(task)
-            console.print(f"[green]✓[/green] Executive Committee decision complete\n")
+            console.print(f"[green]✓[/green] {self.executive_committee.name} decision complete\n")
         
         return final_decision
     

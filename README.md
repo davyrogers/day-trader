@@ -104,6 +104,7 @@ This system fetches news from **103 forex sources**, processes it through this A
 ## 📖 Documentation
 
 - **[QUICK_REFERENCE.md](QUICK_REFERENCE.md)** - ⚡ Quick reference card for daily use
+- **[ANALYST_CONFIG.md](ANALYST_CONFIG.md)** - 🔧 Configure your analyst team (JSON-based)
 - **[ANALYSIS_PIPELINE.md](ANALYSIS_PIPELINE.md)** - Detailed architecture of the 3-tier AI system
 - **[ANALYST_TEAM.md](ANALYST_TEAM.md)** - Meet the 6 AI analysts and their personalities
 - **[SYSTEM_FLOW.md](SYSTEM_FLOW.md)** - Visual pipeline and information flow
@@ -159,6 +160,18 @@ The system is designed to:
 
 ## ⚙️ Configuration
 
+### Team Configuration (analyst_team.json)
+
+The analyst team is fully configurable via JSON! Edit `analyst_team.json` to:
+- ✅ Add/remove analysts
+- ✅ Change AI models and temperatures
+- ✅ Customize personalities and prompts
+- ✅ Modify management layers
+
+See **[ANALYST_CONFIG.md](ANALYST_CONFIG.md)** for full configuration guide.
+
+### Environment Configuration (.env)
+
 Key settings in `.env`:
 
 ```env
@@ -181,7 +194,7 @@ LOG_LEVEL=INFO
 
 **Configuration Notes**:
 - **RUN_CONCURRENT**: Set to `false` if your Ollama instance can't handle concurrent requests. Sequential is safer but slower.
-- **Analyst Team**: The 6 AI analysts are hardcoded with specific personalities - see [ANALYST_TEAM.md](ANALYST_TEAM.md) for details
+- **Analyst Team**: Configured in `analyst_team.json` - no need to edit code!
 
 ### Getting a Discord Webhook URL
 
