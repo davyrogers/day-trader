@@ -8,6 +8,7 @@ import httpx
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn
 from dataclasses import dataclass
+from .market_data import MarketDataFetcher, extract_instrument_from_news
 
 console = Console()
 
@@ -165,29 +166,36 @@ class OllamaAnalyzer:
 class ForexAnalysisPipeline:
     """Orchestrates multi-tier AI analysis with junior analysts, senior synthesis, and executive review."""
     
-    def __init__(self, ollama_base_url: str, run_concurrent: bool, config_path: Optional[str] = None):
+    def __init__(self, ollama_base_url: str, run_concurrent: bool, config_path: Optional[str] = None, market_data_api_key: Optional[str] = None):
         self.ollama_base_url = ollama_base_url
         self.run_concurrent = run_concurrent
         
         # Load team configuration from JSON
         self.team_config = TeamConfiguration(config_path)
         self.junior_analysts = self.team_config.junior_analysts
-        self.senior_manager = self.team_config.get_senior_manager()
-        self.executive_committee = self.team_config.get_executive_committee()
+        self.senior_managers = [layer for layer in self.team_config.management_layers 
+                               if 'senior' in layer.name.lower() or 'manager' in layer.name.lower() and 'executive' not in layer.name.lower()]
+        self.executive_committees = [layer for layer in self.team_config.management_layers 
+                                     if 'executive' in layer.name.lower() or 'committee' in layer.name.lower()]
         
-        if not self.senior_manager:
-            console.print("[yellow]Warning: No senior manager found in config, using default[/yellow]")
-        if not self.executive_committee:
-            console.print("[yellow]Warning: No executive committee found in config, using default[/yellow]")
+        # Initialize market data fetcher
+        self.market_data_fetcher = MarketDataFetcher(api_key=market_data_api_key)
+        
+        if not self.senior_managers:
+            console.print("[yellow]Warning: No senior managers found in config, using first management layer[/yellow]")
+            self.senior_managers = [self.team_config.management_layers[0]] if self.team_config.management_layers else []
+        if not self.executive_committees:
+            console.print("[yellow]Warning: No executive committees found in config, using last management layer[/yellow]")
+            self.executive_committees = [self.team_config.management_layers[-1]] if len(self.team_config.management_layers) > 1 else []
     
     def analyze_news(self, aggregated_data: Dict[str, Any]) -> str:
-        """Run three-tier analysis: Junior Analysts → Senior Manager → Executive Committee."""
+        """Run multi-tier analysis: Junior Analysts → Senior Managers → Executive Committees."""
         
         mode = "Concurrent" if self.run_concurrent else "Sequential"
-        console.print(f"\n[bold cyan]Starting 3-Tier AI Analysis Pipeline ({mode} Mode)[/bold cyan]")
+        console.print(f"\n[bold cyan]Starting Enhanced Multi-Tier AI Analysis Pipeline ({mode} Mode)[/bold cyan]")
         console.print(f"[dim]Tier 1: {len(self.junior_analysts)} Junior Analysts[/dim]")
-        console.print(f"[dim]Tier 2: Senior Manager Synthesis[/dim]")
-        console.print(f"[dim]Tier 3: Executive Committee Review[/dim]\n")
+        console.print(f"[dim]Tier 2: {len(self.senior_managers)} Senior Managers[/dim]")
+        console.print(f"[dim]Tier 3: {len(self.executive_committees)} Executive Committees[/dim]\n")
         
         if self.run_concurrent:
             return asyncio.run(self._analyze_news_async(aggregated_data))
@@ -195,7 +203,14 @@ class ForexAnalysisPipeline:
             return self._analyze_news_sequential(aggregated_data)
     
     def _analyze_news_sequential(self, aggregated_data: Dict[str, Any]) -> str:
-        """Sequential three-tier analysis pipeline."""
+        """Sequential multi-tier analysis pipeline with market data integration."""
+        
+        # Fetch market data first
+        console.print("[bold cyan]Fetching real-time market data...[/bold cyan]")
+        instrument = extract_instrument_from_news(aggregated_data)
+        market_data_raw = asyncio.run(self.market_data_fetcher.get_forex_data_async(instrument))
+        market_data_formatted = self.market_data_fetcher.format_market_data(market_data_raw)
+        console.print(market_data_formatted)
         
         with Progress(
             SpinnerColumn(),
@@ -204,7 +219,7 @@ class ForexAnalysisPipeline:
             TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
             console=console
         ) as progress:
-            total_steps = len(self.junior_analysts) + 2  # analysts + senior + executive
+            total_steps = len(self.junior_analysts) + len(self.senior_managers) + len(self.executive_committees)
             task = progress.add_task("[cyan]Running analysis pipeline...", total=total_steps)
             
             # TIER 1: Junior Analysts Review
@@ -234,50 +249,103 @@ class ForexAnalysisPipeline:
                 progress.advance(task)
                 console.print(f"[green]✓[/green] {analyst.name} report complete")
             
-            # TIER 2: Senior Manager Synthesis
-            if not self.senior_manager:
-                console.print("[red]Error: No senior manager configured[/red]")
-                return "Configuration error: No senior manager found"
+            # TIER 2: Senior Manager Synthesis (Multiple Managers)
+            if not self.senior_managers:
+                console.print("[red]Error: No senior managers configured[/red]")
+                return "Configuration error: No senior managers found"
             
-            console.print("\n[bold yellow]═══ TIER 2: SENIOR MANAGER ═══[/bold yellow]")
-            progress.update(task, description="[cyan]Senior Manager synthesizing reports...")
+            console.print(f"\n[bold yellow]═══ TIER 2: SENIOR MANAGERS ({len(self.senior_managers)} Managers) ═══[/bold yellow]")
+            senior_reports = []
             
-            senior_data = {"data": junior_reports}
-            senior_analyzer = OllamaAnalyzer(
-                self.ollama_base_url,
-                self.senior_manager.model,
-                self.senior_manager.temperature
-            )
-            senior_report = asyncio.run(
-                senior_analyzer.analyze_async(self.senior_manager.system_prompt, senior_data)
-            )
-            progress.advance(task)
-            console.print(f"[green]✓[/green] {self.senior_manager.name} synthesis complete")
+            for manager in self.senior_managers:
+                progress.update(task, description=f"[cyan]{manager.name} synthesizing...")
+                
+                senior_data = {"data": junior_reports}
+                
+                # Inject market data into prompt
+                manager_prompt = manager.system_prompt.replace("{{MARKET_DATA}}", market_data_formatted)
+                
+                senior_analyzer = OllamaAnalyzer(
+                    self.ollama_base_url,
+                    manager.model,
+                    manager.temperature
+                )
+                senior_report = asyncio.run(
+                    senior_analyzer.analyze_async(manager_prompt, senior_data)
+                )
+                
+                senior_reports.append({
+                    "manager": manager.name,
+                    "role": manager.role,
+                    "output": senior_report
+                })
+                progress.advance(task)
+                console.print(f"[green]✓[/green] {manager.name} synthesis complete")
             
-            # TIER 3: Executive Committee Final Review
-            if not self.executive_committee:
-                console.print("[red]Error: No executive committee configured[/red]")
-                return senior_report  # Return senior report if no exec committee
+            # TIER 3: Executive Committee Final Review (Multiple Committees)
+            if not self.executive_committees:
+                console.print("[red]Error: No executive committees configured[/red]")
+                return senior_reports[0]['output'] if senior_reports else "Error: No reports generated"
             
-            console.print("\n[bold yellow]═══ TIER 3: EXECUTIVE COMMITTEE ═══[/bold yellow]")
-            progress.update(task, description="[cyan]Executive Committee deliberating...")
+            console.print(f"\n[bold yellow]═══ TIER 3: EXECUTIVE COMMITTEES ({len(self.executive_committees)} Committees) ═══[/bold yellow]")
+            final_decisions = []
             
-            executive_data = {"data": {"senior_report": senior_report, "analyst_count": len(junior_reports)}}
-            executive_analyzer = OllamaAnalyzer(
-                self.ollama_base_url,
-                self.executive_committee.model,
-                self.executive_committee.temperature
-            )
-            final_decision = asyncio.run(
-                executive_analyzer.analyze_async(self.executive_committee.system_prompt, executive_data)
-            )
-            progress.advance(task)
-            console.print(f"[green]✓[/green] {self.executive_committee.name} decision complete\n")
+            for committee in self.executive_committees:
+                progress.update(task, description=f"[cyan]{committee.name} deliberating...")
+                
+                executive_data = {
+                    "data": {
+                        "senior_reports": senior_reports,
+                        "analyst_count": len(junior_reports),
+                        "manager_count": len(senior_reports)
+                    }
+                }
+                
+                # Inject market data into prompt
+                committee_prompt = committee.system_prompt.replace("{{MARKET_DATA}}", market_data_formatted)
+                
+                executive_analyzer = OllamaAnalyzer(
+                    self.ollama_base_url,
+                    committee.model,
+                    committee.temperature
+                )
+                final_decision = asyncio.run(
+                    executive_analyzer.analyze_async(committee_prompt, executive_data)
+                )
+                
+                final_decisions.append({
+                    "committee": committee.name,
+                    "role": committee.role,
+                    "output": final_decision
+                })
+                progress.advance(task)
+                console.print(f"[green]✓[/green] {committee.name} decision complete")
         
-        return final_decision
+        # Return all executive decisions with clear separation
+        result = "\n\n" + "="*80 + "\n"
+        result += "FINAL EXECUTIVE DECISIONS\n"
+        result += "="*80 + "\n\n"
+        
+        for i, decision in enumerate(final_decisions, 1):
+            result += f"\n{'─'*80}\n"
+            result += f"{decision['committee']} ({decision['role']})\n"
+            result += f"{'─'*80}\n\n"
+            result += decision['output']
+            result += "\n"
+        
+        result += "\n" + "="*80 + "\n"
+        
+        return result
     
     async def _analyze_news_async(self, aggregated_data: Dict[str, Any]) -> str:
-        """Concurrent three-tier analysis pipeline."""
+        """Concurrent multi-tier analysis pipeline with market data integration."""
+        
+        # Fetch market data first
+        console.print("[bold cyan]Fetching real-time market data...[/bold cyan]")
+        instrument = extract_instrument_from_news(aggregated_data)
+        market_data_raw = await self.market_data_fetcher.get_forex_data_async(instrument)
+        market_data_formatted = self.market_data_fetcher.format_market_data(market_data_raw)
+        console.print(market_data_formatted)
         
         with Progress(
             SpinnerColumn(),
@@ -286,7 +354,7 @@ class ForexAnalysisPipeline:
             TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
             console=console
         ) as progress:
-            total_steps = len(self.junior_analysts) + 2
+            total_steps = len(self.junior_analysts) + len(self.senior_managers) + len(self.executive_committees)
             task = progress.add_task("[cyan]Running analysis pipeline...", total=total_steps)
             
             # TIER 1: Junior Analysts Review (Concurrent)
@@ -326,50 +394,124 @@ class ForexAnalysisPipeline:
                 progress.advance(task, advance=1)
                 console.print(f"[green]✓[/green] {analyst_name} report complete")
             
-            # TIER 2: Senior Manager Synthesis
-            if not self.senior_manager:
-                console.print("[red]Error: No senior manager configured[/red]")
-                return "Configuration error: No senior manager found"
+            # TIER 2: Senior Manager Synthesis (Multiple Managers, run concurrently)
+            if not self.senior_managers:
+                console.print("[red]Error: No senior managers configured[/red]")
+                return "Configuration error: No senior managers found"
             
-            console.print("\n[bold yellow]═══ TIER 2: SENIOR MANAGER ═══[/bold yellow]")
-            progress.update(task, description="[cyan]Senior Manager synthesizing reports...")
+            console.print(f"\n[bold yellow]═══ TIER 2: SENIOR MANAGERS (CONCURRENT - {len(self.senior_managers)} Managers) ═══[/bold yellow]")
             
-            senior_data = {"data": junior_reports}
-            senior_analyzer = OllamaAnalyzer(
-                self.ollama_base_url,
-                self.senior_manager.model,
-                self.senior_manager.temperature
-            )
-            senior_report = await senior_analyzer.analyze_async(
-                self.senior_manager.system_prompt, senior_data
-            )
-            progress.advance(task)
-            console.print(f"[green]✓[/green] {self.senior_manager.name} synthesis complete")
+            manager_tasks = []
+            for manager in self.senior_managers:
+                senior_data = {"data": junior_reports}
+                # Inject market data into prompt
+                manager_prompt = manager.system_prompt.replace("{{MARKET_DATA}}", market_data_formatted)
+                
+                senior_analyzer = OllamaAnalyzer(
+                    self.ollama_base_url,
+                    manager.model,
+                    manager.temperature
+                )
+                manager_tasks.append(
+                    self._run_senior_manager(manager, senior_analyzer, manager_prompt, senior_data)
+                )
             
-            # TIER 3: Executive Committee Final Review
-            if not self.executive_committee:
-                console.print("[red]Error: No executive committee configured[/red]")
-                return senior_report  # Return senior report if no exec committee
+            # Run all senior managers concurrently
+            manager_results = await asyncio.gather(*manager_tasks, return_exceptions=True)
             
-            console.print("\n[bold yellow]═══ TIER 3: EXECUTIVE COMMITTEE ═══[/bold yellow]")
-            progress.update(task, description="[cyan]Executive Committee deliberating...")
+            senior_reports = []
+            for result in manager_results:
+                if isinstance(result, Exception):
+                    console.print(f"[red]✗[/red] Manager failed: {str(result)}")
+                    continue
+                
+                manager_name, manager_role, output = result
+                senior_reports.append({
+                    "manager": manager_name,
+                    "role": manager_role,
+                    "output": output
+                })
+                progress.advance(task, advance=1)
+                console.print(f"[green]✓[/green] {manager_name} synthesis complete")
             
-            executive_data = {"data": {"senior_report": senior_report, "analyst_count": len(junior_reports)}}
-            executive_analyzer = OllamaAnalyzer(
-                self.ollama_base_url,
-                self.executive_committee.model,
-                self.executive_committee.temperature
-            )
-            final_decision = await executive_analyzer.analyze_async(
-                self.executive_committee.system_prompt, executive_data
-            )
-            progress.advance(task)
-            console.print(f"[green]✓[/green] {self.executive_committee.name} decision complete\n")
+            # TIER 3: Executive Committee Final Review (Multiple Committees, run concurrently)
+            if not self.executive_committees:
+                console.print("[red]Error: No executive committees configured[/red]")
+                return senior_reports[0]['output'] if senior_reports else "Error: No reports generated"
+            
+            console.print(f"\n[bold yellow]═══ TIER 3: EXECUTIVE COMMITTEES (CONCURRENT - {len(self.executive_committees)} Committees) ═══[/bold yellow]")
+            
+            committee_tasks = []
+            for committee in self.executive_committees:
+                executive_data = {
+                    "data": {
+                        "senior_reports": senior_reports,
+                        "analyst_count": len(junior_reports),
+                        "manager_count": len(senior_reports)
+                    }
+                }
+                
+                # Inject market data into prompt
+                committee_prompt = committee.system_prompt.replace("{{MARKET_DATA}}", market_data_formatted)
+                
+                executive_analyzer = OllamaAnalyzer(
+                    self.ollama_base_url,
+                    committee.model,
+                    committee.temperature
+                )
+                committee_tasks.append(
+                    self._run_executive_committee(committee, executive_analyzer, committee_prompt, executive_data)
+                )
+            
+            # Run all executive committees concurrently
+            committee_results = await asyncio.gather(*committee_tasks, return_exceptions=True)
+            
+            final_decisions = []
+            for result in committee_results:
+                if isinstance(result, Exception):
+                    console.print(f"[red]✗[/red] Committee failed: {str(result)}")
+                    continue
+                
+                committee_name, committee_role, output = result
+                final_decisions.append({
+                    "committee": committee_name,
+                    "role": committee_role,
+                    "output": output
+                })
+                progress.advance(task, advance=1)
+                console.print(f"[green]✓[/green] {committee_name} decision complete")
         
-        return final_decision
+        # Return all executive decisions with clear separation
+        result = "\n\n" + "="*80 + "\n"
+        result += "FINAL EXECUTIVE DECISIONS\n"
+        result += "="*80 + "\n\n"
+        
+        for i, decision in enumerate(final_decisions, 1):
+            result += f"\n{'─'*80}\n"
+            result += f"{decision['committee']} ({decision['role']})\n"
+            result += f"{'─'*80}\n\n"
+            result += decision['output']
+            result += "\n"
+        
+        result += "\n" + "="*80 + "\n"
+        
+        return result
     
     async def _run_junior_analyst(self, analyst: AnalystProfile, analyzer: OllamaAnalyzer, 
                                    prompt: str, data: Dict[str, Any]) -> tuple:
         """Run a single junior analyst analysis asynchronously."""
         result = await analyzer.analyze_async(prompt, data)
         return (analyst.name, analyst.role, analyst.focus_area, result)
+    
+    async def _run_senior_manager(self, manager: ManagementLayer, analyzer: OllamaAnalyzer,
+                                   prompt: str, data: Dict[str, Any]) -> tuple:
+        """Run a single senior manager synthesis asynchronously."""
+        result = await analyzer.analyze_async(prompt, data)
+        return (manager.name, manager.role, result)
+    
+    async def _run_executive_committee(self, committee: ManagementLayer, analyzer: OllamaAnalyzer,
+                                        prompt: str, data: Dict[str, Any]) -> tuple:
+        """Run a single executive committee review asynchronously."""
+        result = await analyzer.analyze_async(prompt, data)
+        return (committee.name, committee.role, result)
+
