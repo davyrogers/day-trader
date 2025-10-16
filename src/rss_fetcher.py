@@ -90,15 +90,15 @@ class RSSFeedAggregator:
             # FXStreet - Comprehensive forex coverage
             RSSFeed("FXStreet - News", "https://www.fxstreet.com/rss/news"),
             RSSFeed("FXStreet - Analysis", "https://www.fxstreet.com/rss/analysis"),
-            RSSFeed("FXStreet - Forecasts", "https://www.fxstreet.com/rss/forecasts"),
-            RSSFeed("FXStreet - Signals", "https://www.fxstreet.com/rss/signals"),
+            # REMOVED - 404 Error: RSSFeed("FXStreet - Forecasts", "https://www.fxstreet.com/rss/forecasts"),
+            # REMOVED - 404 Error: RSSFeed("FXStreet - Signals", "https://www.fxstreet.com/rss/signals"),
             
             # DailyForex - Multiple analysis perspectives
             RSSFeed("DailyForex - Forex News", "https://www.dailyforex.com/rss/forexnews.xml"),
             RSSFeed("DailyForex - Technical Analysis", "https://www.dailyforex.com/rss/technicalanalysis.xml"),
             RSSFeed("DailyForex - Fundamental Analysis", "https://www.dailyforex.com/rss/fundamentalanalysis.xml"),
             RSSFeed("DailyForex - Forex Articles", "https://www.dailyforex.com/rss/forexarticles.xml"),
-            RSSFeed("DailyForex - Market News", "https://www.dailyforex.com/rss/marketnews.xml"),
+            # REMOVED - 404 Error: RSSFeed("DailyForex - Market News", "https://www.dailyforex.com/rss/marketnews.xml"),
             
             # Investing.com - Major financial news platform
             RSSFeed("InvestingLive", "https://investinglive.com/feed"),
@@ -106,34 +106,34 @@ class RSSFeedAggregator:
             RSSFeed("Investing.com - Economic Indicators", "https://www.investing.com/rss/news_95.rss"),
             RSSFeed("Investing.com - Market Overview", "https://www.investing.com/rss/news_1.rss"),
             RSSFeed("Investing.com - Stock Market", "https://www.investing.com/rss/news_25.rss"),
-            RSSFeed("Investing.com - Commodities", "https://www.investing.com/rss/news_296.rss"),
+            # REMOVED - 404 Error: RSSFeed("Investing.com - Commodities", "https://www.investing.com/rss/news_296.rss"),
             RSSFeed("Investing.com - Cryptocurrency", "https://www.investing.com/rss/news_285.rss"),
             
             # ForexLive - Real-time forex commentary
             RSSFeed("ForexLive", "https://www.forexlive.com/feed/news"),
             RSSFeed("ForexLive - Technical Analysis", "https://www.forexlive.com/feed/technicalanalysis"),
             
-            # Reuters - Business & Finance
-            RSSFeed("Reuters - Markets", "https://www.reutersagency.com/feed/?taxonomy=best-topics&post_type=best"),
-            RSSFeed("Reuters - Business", "https://www.reutersagency.com/feed/?best-sectors=business-finance&post_type=best"),
+            # REMOVED - 404 Error: Reuters - Business & Finance
+            # REMOVED - 404 Error: RSSFeed("Reuters - Markets", "https://www.reutersagency.com/feed/?taxonomy=best-topics&post_type=best"),
+            # REMOVED - 404 Error: RSSFeed("Reuters - Business", "https://www.reutersagency.com/feed/?best-sectors=business-finance&post_type=best"),
             
             # Bloomberg via Yahoo Finance
             RSSFeed("Yahoo Finance - Forex", "https://finance.yahoo.com/news/rssindex"),
             
-            # FX Empire - Multi-asset coverage
+            # FX Empire - Multi-asset coverage (parsing warning but works)
             RSSFeed("FX Empire - Forex", "https://www.fxempire.com/api/v1/en/articles/rss"),
-            RSSFeed("FX Empire - Commodities", "https://www.fxempire.com/api/v1/en/commodities/rss"),
-            RSSFeed("FX Empire - Crypto", "https://www.fxempire.com/api/v1/en/cryptocurrencies/rss"),
+            # REMOVED - 404 Error: RSSFeed("FX Empire - Commodities", "https://www.fxempire.com/api/v1/en/commodities/rss"),
+            # REMOVED - 404 Error: RSSFeed("FX Empire - Crypto", "https://www.fxempire.com/api/v1/en/cryptocurrencies/rss"),
             
             # Action Forex
             RSSFeed("Action Forex - News", "https://www.actionforex.com/feed/"),
             
-            # ForexFactory (if available)
-            RSSFeed("Forex Factory News", "https://www.forexfactory.com/feed.php"),
+            # REMOVED - 403 Error: ForexFactory
+            # REMOVED - 403 Error: RSSFeed("Forex Factory News", "https://www.forexfactory.com/feed.php"),
             
-            # MarketWatch
-            RSSFeed("MarketWatch - Currencies", "https://www.marketwatch.com/rss/currencies"),
-            RSSFeed("MarketWatch - Markets", "https://www.marketwatch.com/rss/markets"),
+            # REMOVED - 403 Error: MarketWatch
+            # REMOVED - 403 Error: RSSFeed("MarketWatch - Currencies", "https://www.marketwatch.com/rss/currencies"),
+            # REMOVED - 403 Error: RSSFeed("MarketWatch - Markets", "https://www.marketwatch.com/rss/markets"),
             RSSFeed("MarketWatch - Top Stories", "https://www.marketwatch.com/rss/topstories"),
             RSSFeed("MarketWatch - Breaking News", "https://www.marketwatch.com/rss/realtimeheadlines"),
             
@@ -149,21 +149,21 @@ class RSSFeedAggregator:
             # ForexCrunch
             RSSFeed("ForexCrunch", "https://www.forexcrunch.com/feed/"),
             
-            # FXCM Insights
-            RSSFeed("FXCM Insights", "https://www.fxcm.com/insights/feed/"),
+            # REMOVED - 403 Error: FXCM Insights
+            # REMOVED - 403 Error: RSSFeed("FXCM Insights", "https://www.fxcm.com/insights/feed/"),
             
-            # Forex.com News
-            RSSFeed("Forex.com - Market News", "https://www.forex.com/en-us/news-and-analysis/feed/"),
+            # REMOVED - 403 Error: Forex.com News
+            # REMOVED - 403 Error: RSSFeed("Forex.com - Market News", "https://www.forex.com/en-us/news-and-analysis/feed/"),
             
-            # DailyFX
-            RSSFeed("DailyFX", "https://www.dailyfx.com/feeds/market-news"),
-            RSSFeed("DailyFX - Trading News", "https://www.dailyfx.com/feeds/trading-news"),
+            # REMOVED - 403 Error: DailyFX
+            # REMOVED - 403 Error: RSSFeed("DailyFX", "https://www.dailyfx.com/feeds/market-news"),
+            # REMOVED - 403 Error: RSSFeed("DailyFX - Trading News", "https://www.dailyfx.com/feeds/trading-news"),
             
             # Newsquawk
             RSSFeed("Newsquawk", "https://newsquawk.com/blog/feed.rss"),
             
-            # OANDA - Market Insights
-            RSSFeed("OANDA - News", "https://www.oanda.com/rw-en/blog/feed/"),
+            # REMOVED - 404 Error: OANDA - Market Insights
+            # REMOVED - 404 Error: RSSFeed("OANDA - News", "https://www.oanda.com/rw-en/blog/feed/"),
             
             # Benzinga
             RSSFeed("Benzinga - Forex", "https://www.benzinga.com/feed"),
@@ -172,23 +172,23 @@ class RSSFeedAggregator:
             # ZeroHedge - Alternative perspective
             RSSFeed("ZeroHedge", "https://feeds.feedburner.com/zerohedge/feed"),
             
-            # Kitco - Precious metals (affects forex)
-            RSSFeed("Kitco News", "https://www.kitco.com/rss/KitcoNews.xml"),
+            # REMOVED - 404 Error: Kitco - Precious metals
+            # REMOVED - 404 Error: RSSFeed("Kitco News", "https://www.kitco.com/rss/KitcoNews.xml"),
             
-            # Central Bank News
-            RSSFeed("Central Bank News", "https://www.centralbanksnews.info/feed"),
+            # REMOVED - DNS Error: Central Bank News
+            # REMOVED - DNS Error: RSSFeed("Central Bank News", "https://www.centralbanksnews.info/feed"),
             
-            # ForexNews.com
-            RSSFeed("ForexNews.com", "https://www.forex.com/en-us/news-and-analysis/feed/"),
+            # REMOVED - 403 Error: ForexNews.com (duplicate of forex.com)
+            # REMOVED - 403 Error: RSSFeed("ForexNews.com", "https://www.forex.com/en-us/news-and-analysis/feed/"),
             
-            # FXEmpire Technical Analysis
-            RSSFeed("FXEmpire - Technical", "https://www.fxempire.com/api/v1/en/technical-analysis/rss"),
+            # REMOVED - 404 Error: FXEmpire Technical Analysis
+            # REMOVED - 404 Error: RSSFeed("FXEmpire - Technical", "https://www.fxempire.com/api/v1/en/technical-analysis/rss"),
             
-            # Trading Economics
-            RSSFeed("Trading Economics", "https://tradingeconomics.com/rss/news"),
+            # REMOVED - 403 Error: Trading Economics
+            # REMOVED - 403 Error: RSSFeed("Trading Economics", "https://tradingeconomics.com/rss/news"),
             
-            # The Street
-            RSSFeed("TheStreet - Markets", "https://www.thestreet.com/feeds/latest-news.xml"),
+            # REMOVED - 403 Error: The Street
+            # REMOVED - 403 Error: RSSFeed("TheStreet - Markets", "https://www.thestreet.com/feeds/latest-news.xml"),
             
             # Seeking Alpha
             RSSFeed("Seeking Alpha - Forex", "https://seekingalpha.com/feed.xml"),
@@ -197,60 +197,60 @@ class RSSFeedAggregator:
             # FXDailyReport
             RSSFeed("FXDailyReport", "https://fxdailyreport.com/feed/"),
             
-            # LeapRate Forex
-            RSSFeed("LeapRate - Forex", "https://www.leaprate.com/feed/"),
+            # REMOVED - 520 Error: LeapRate Forex
+            # REMOVED - 520 Error: RSSFeed("LeapRate - Forex", "https://www.leaprate.com/feed/"),
             
             # Finance Magnates
             RSSFeed("Finance Magnates - Forex", "https://www.financemagnates.com/feed/"),
             
-            # TipRanks Economics
-            RSSFeed("TipRanks - Economic Calendar", "https://www.tipranks.com/api/feed/"),
+            # REMOVED - 404 Error: TipRanks Economics
+            # REMOVED - 404 Error: RSSFeed("TipRanks - Economic Calendar", "https://www.tipranks.com/api/feed/"),
             
             # FXOpen Blog
             RSSFeed("FXOpen Blog", "https://blog.fxopen.com/feed/"),
             
-            # Admirals (formerly Admiral Markets)
-            RSSFeed("Admirals - News", "https://admiralmarkets.com/news/rss"),
+            # REMOVED - 404 Error: Admirals
+            # REMOVED - 404 Error: RSSFeed("Admirals - News", "https://admiralmarkets.com/news/rss"),
             
             # IC Markets
             RSSFeed("IC Markets - News", "https://www.icmarkets.com/blog/feed/"),
             
-            # Pepperstone
-            RSSFeed("Pepperstone - News", "https://www.pepperstone.com/en/blog/feed"),
+            # REMOVED - 404 Error: Pepperstone
+            # REMOVED - 404 Error: RSSFeed("Pepperstone - News", "https://www.pepperstone.com/en/blog/feed"),
             
-            # XM Research
-            RSSFeed("XM - Research", "https://www.xm.com/research/feed"),
+            # REMOVED - Parsing Error: XM Research
+            # REMOVED - Parsing Error: RSSFeed("XM - Research", "https://www.xm.com/research/feed"),
             
             # eToro Market Updates
             RSSFeed("eToro - Market Analysis", "https://www.etoro.com/news-and-analysis/feed/"),
             
-            # Plus500 News
-            RSSFeed("Plus500 - Insights", "https://www.plus500.com/en-US/NewsAndMarketInsights/RSS"),
+            # REMOVED - 403 Error: Plus500 News
+            # REMOVED - 403 Error: RSSFeed("Plus500 - Insights", "https://www.plus500.com/en-US/NewsAndMarketInsights/RSS"),
             
-            # IG Market News
-            RSSFeed("IG - Daily Market News", "https://www.ig.com/uk/news-and-trade-ideas/rss"),
+            # REMOVED - 404 Error: IG Market News
+            # REMOVED - 404 Error: RSSFeed("IG - Daily Market News", "https://www.ig.com/uk/news-and-trade-ideas/rss"),
             
-            # CMC Markets
-            RSSFeed("CMC Markets - News", "https://www.cmcmarkets.com/en/rss/news-and-analysis"),
+            # REMOVED - 404 Error: CMC Markets
+            # REMOVED - 404 Error: RSSFeed("CMC Markets - News", "https://www.cmcmarkets.com/en/rss/news-and-analysis"),
             
-            # Saxo Bank
-            RSSFeed("Saxo Bank - Research", "https://www.home.saxo/en-gb/insights/rss"),
+            # REMOVED - 404 Error: Saxo Bank
+            # REMOVED - 404 Error: RSSFeed("Saxo Bank - Research", "https://www.home.saxo/en-gb/insights/rss"),
             
-            # Interactive Brokers
-            RSSFeed("IBKR - Traders Insight", "https://www.interactivebrokers.com/rss/newsroom.xml"),
+            # REMOVED - 404 Error: Interactive Brokers
+            # REMOVED - 404 Error: RSSFeed("IBKR - Traders Insight", "https://www.interactivebrokers.com/rss/newsroom.xml"),
             
-            # Myfxbook
-            RSSFeed("Myfxbook - Market Outlook", "https://www.myfxbook.com/community/feed"),
+            # REMOVED - 404 Error: Myfxbook
+            # REMOVED - 404 Error: RSSFeed("Myfxbook - Market Outlook", "https://www.myfxbook.com/community/feed"),
             
-            # Dukascopy
-            RSSFeed("Dukascopy - Analytics", "https://www.dukascopy.com/swiss/english/marketwatch/news/feed/"),
+            # REMOVED - 404 Error: Dukascopy
+            # REMOVED - 404 Error: RSSFeed("Dukascopy - Analytics", "https://www.dukascopy.com/swiss/english/marketwatch/news/feed/"),
             
-            # FXStreet Additional Feeds
-            RSSFeed("FXStreet - Market Movers", "https://www.fxstreet.com/rss/market-movers"),
-            RSSFeed("FXStreet - Cryptocurrencies", "https://www.fxstreet.com/rss/cryptocurrencies"),
+            # REMOVED - 404 Error: FXStreet Additional Feeds
+            # REMOVED - 404 Error: RSSFeed("FXStreet - Market Movers", "https://www.fxstreet.com/rss/market-movers"),
+            # REMOVED - 404 Error: RSSFeed("FXStreet - Cryptocurrencies", "https://www.fxstreet.com/rss/cryptocurrencies"),
             
-            # Economic Calendar Sources
-            RSSFeed("Econoday", "https://www.econoday.com/rss.aspx"),
+            # REMOVED - 404 Error: Economic Calendar Sources
+            # REMOVED - 404 Error: RSSFeed("Econoday", "https://www.econoday.com/rss.aspx"),
             
             # Mish Talk (Mike Shedlock)
             RSSFeed("Mish Talk - Global Economics", "https://mishtalk.com/feed"),
