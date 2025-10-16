@@ -1,37 +1,51 @@
 # Forex News Squawk Analyzer
 
-A Python-based workflow that replaces the n8n automation for analyzing forex news and generating trading signals.
+A sophisticated Python-based workflow that analyzes forex news through a **three-tier AI hierarchy** to generate actionable trading signals.
 
-## Features
+## 🎯 What This Does
 
-- 🔄 Fetches RSS feeds from multiple forex news sources
-- 🤖 AI-powered analysis using Ollama (multiple models)
-- 💬 Sends summaries to Discord
-- 📊 Rich CLI with progress indicators
-- ⏰ Scheduled or one-time execution
+Imagine a **professional trading desk** with:
+- 👥 **6 Junior Analysts** (each with unique personality and expertise)
+- 👔 **1 Senior Manager** (synthesizes analyst reports)
+- 🎩 **Executive Committee** (makes final trading decisions)
 
-## Setup
+This system fetches news from **103 forex sources**, processes it through this AI hierarchy, and delivers **clear, actionable recommendations** to Discord.
 
-### Prerequisites
+## ✨ Key Features
+
+- � **103 RSS Feeds** from major forex news sources (FXStreet, DailyForex, Reuters, Bloomberg, etc.)
+- 🚦 **Rate Limiting** to prevent getting blocked by news sources
+- 🤖 **6 AI Analyst Personalities** with different models, temperatures, and focus areas:
+  - Marcus (Conservative Risk Manager)
+  - Sarah (Technical Analyst)
+  - James (Aggressive Momentum Trader)
+  - Elena (Fundamental Economist)
+  - David (Contrarian Strategist)
+  - Priya (Sentiment Analyst)
+- 🏢 **3-Tier Analysis Pipeline**:
+  - Tier 1: Junior analysts review raw news
+  - Tier 2: Senior manager synthesizes reports
+  - Tier 3: Executive committee makes final decision
+- 💬 **Discord Integration** with clear BLUF format output
+- 📊 **Rich CLI** with progress indicators
+- ⚡ **Concurrent or Sequential** execution modes
+- ⏰ **Scheduled or One-Time** execution
+
+## 📋 Prerequisites
 
 1. **Python 3.9+** installed
-2. **Ollama** installed and running locally with the required models:
-   - `gpt-oss:20b` (primary analysis model)
-   - `deepseek-r1:8b` (secondary analysis model)
-   - `llama3:70b` (optional, for more diverse perspectives)
-   - `mistral:latest` (optional, for more diverse perspectives)
-
-   Install models with:
+2. **Ollama** installed and running locally with these models:
    ```bash
-   ollama pull gpt-oss:20b
-   ollama pull deepseek-r1:8b
-   ollama pull llama3:70b
+   ollama pull llama3.2:latest
+   ollama pull qwen2.5:latest
    ollama pull mistral:latest
+   ollama pull gemma2:latest
+   ollama pull phi3:latest
    ```
 
-   **Note**: The system uses multiple AI agents with different temperatures (0.7-1.0) to get diverse perspectives on the forex news. You can configure which models to use and their temperatures in the `.env` file.
+3. **Discord Webhook URL** (optional, for receiving signals)
 
-### Installation
+## 🚀 Quick Start
 
 1. Clone the repository (if not already done):
    ```bash
@@ -44,44 +58,130 @@ A Python-based workflow that replaces the n8n automation for analyzing forex new
    pip install -r requirements.txt
    ```
 
-3. Create a `.env` file from the example:
+## 🚀 Quick Start
+
+### Windows (Recommended)
+
+1. **Run the installer**:
+   ```bash
+   install.bat
+   ```
+   This installs all dependencies and verifies your setup.
+
+2. **Configure your environment**:
+   Edit `.env` file with your Discord webhook:
+   ```
+   DISCORD_WEBHOOK_URL=your_webhook_url_here
+   RUN_CONCURRENT=false
+   ```
+
+3. **Run the analyzer**:
+   ```bash
+   start.bat
+   ```
+
+### Manual Installation
+
+1. Clone and install:
+   ```bash
+   git clone <your-repo-url>
+   cd day-trader
+   pip install -r requirements.txt
+   ```
+
+2. Create `.env` file:
    ```bash
    copy .env.example .env
    ```
 
-4. Configure your `.env` file:
-   ```env
-   # Ollama Configuration
-   OLLAMA_BASE_URL=http://localhost:11434
-   
-   # AI Analysis Configuration
-   # Comma-separated lists of models and temperatures (must match in length)
-   AI_MODELS=deepseek-r1:8b,gpt-oss:20b,gpt-oss:20b,gpt-oss:20b,llama3:70b,mistral:latest
-   AI_TEMPERATURES=0.7,0.8,0.9,1.0,0.85,0.75
-   
-   # Synthesis model (combines all agent analyses)
-   SYNTHESIS_MODEL=gpt-oss:20b
-   SYNTHESIS_TEMPERATURE=0.7
-   
-   # Execution mode: false = sequential (safer for Ollama), true = concurrent (faster)
-   RUN_CONCURRENT=false
+3. Configure your Discord webhook URL in `.env`
 
-   # Discord Configuration (optional but recommended)
-   DISCORD_WEBHOOK_URL=your_webhook_url_here
-
-   # Workflow Configuration
-   RUN_ONCE=true
-   SCHEDULE_INTERVAL_HOURS=1
-
-   # Logging
-   LOG_LEVEL=INFO
+4. Run:
+   ```bash
+   python run.py
    ```
 
-   **Configuration Notes**:
-   - **AI_MODELS**: List of Ollama models to use for analysis. Using the same model multiple times with different temperatures gives diverse perspectives.
-   - **AI_TEMPERATURES**: Controls creativity/randomness (0.0-1.0). Higher = more creative. Must match length of AI_MODELS.
-   - **RUN_CONCURRENT**: Set to `false` if your Ollama instance can't handle concurrent requests. Sequential is safer but slower.
-   - **SYNTHESIS_MODEL**: The model used to combine all agent analyses into final recommendation.
+## 📖 Documentation
+
+- **[QUICK_REFERENCE.md](QUICK_REFERENCE.md)** - ⚡ Quick reference card for daily use
+- **[ANALYSIS_PIPELINE.md](ANALYSIS_PIPELINE.md)** - Detailed architecture of the 3-tier AI system
+- **[ANALYST_TEAM.md](ANALYST_TEAM.md)** - Meet the 6 AI analysts and their personalities
+- **[SYSTEM_FLOW.md](SYSTEM_FLOW.md)** - Visual pipeline and information flow
+- **[EXAMPLE_OUTPUTS.md](EXAMPLE_OUTPUTS.md)** - See real examples from each tier
+- **[ENHANCEMENT_SUMMARY.md](ENHANCEMENT_SUMMARY.md)** - What's new in this version
+- **[QUICKSTART.md](QUICKSTART.md)** - Step-by-step setup guide
+- **[CONFIG_REFERENCE.md](CONFIG_REFERENCE.md)** - All configuration options
+- **[PERFORMANCE.md](PERFORMANCE.md)** - Concurrent vs sequential modes
+
+## 🎯 Trading Strategy
+
+**Focus**: EUR/USD shorting opportunities
+
+The system is designed to:
+- ✅ Trade WITH major trends (never against the market)
+- ✅ Find news-driven entry opportunities  
+- ✅ Take small, lower-risk profits
+- ✅ Calculate risk/reward on un-leveraged £100 positions
+- ✅ Provide specific timing windows in UTC
+- ❌ Avoid general market commentary without actionable timing
+
+## 📊 How It Works
+
+```
+103 RSS Feeds → 6 Junior Analysts → Senior Manager → Executive Committee → Discord
+```
+
+1. **RSS Fetching** (Rate-limited, concurrent)
+   - 103 feeds fetched with max 10 concurrent requests
+   - Random delays to avoid blocking
+   - ~30-60 seconds to fetch all sources
+
+2. **Tier 1: Junior Analysts** (Concurrent or Sequential)
+   - 6 analysts review news independently
+   - Each has unique personality and temperature
+   - Different AI models for diverse perspectives
+   - ~2-5 minutes per analyst
+
+3. **Tier 2: Senior Manager**
+   - Synthesizes all 6 analyst reports
+   - Identifies consensus and disagreements
+   - Filters noise and conflicting signals
+   - ~2-3 minutes
+
+4. **Tier 3: Executive Committee**
+   - Final decision-making layer
+   - Verifies timing and risk/reward
+   - Builds consensus on actionable trades
+   - Formats output for Discord
+   - ~2-3 minutes
+
+**Total Time**: 10-20 minutes depending on mode and hardware
+
+## ⚙️ Configuration
+
+Key settings in `.env`:
+
+```env
+# Ollama Configuration
+OLLAMA_BASE_URL=http://localhost:11434
+
+# Execution mode: false = sequential (safer), true = concurrent (faster)
+RUN_CONCURRENT=false
+
+# Discord Configuration (optional but recommended)
+DISCORD_WEBHOOK_URL=your_webhook_url_here
+
+# Workflow Configuration
+RUN_ONCE=true
+SCHEDULE_INTERVAL_HOURS=1
+
+# Logging
+LOG_LEVEL=INFO
+```
+
+**Configuration Notes**:
+- **RUN_CONCURRENT**: Set to `false` if your Ollama instance can't handle concurrent requests. Sequential is safer but slower.
+- **Analyst Team**: The 6 AI analysts are hardcoded with specific personalities - see [ANALYST_TEAM.md](ANALYST_TEAM.md) for details
 
 ### Getting a Discord Webhook URL
 
@@ -91,7 +191,7 @@ A Python-based workflow that replaces the n8n automation for analyzing forex new
 4. Choose a channel and copy the webhook URL
 5. Paste it into your `.env` file
 
-## Usage
+## 🎮 Usage
 
 ### Run Once
 

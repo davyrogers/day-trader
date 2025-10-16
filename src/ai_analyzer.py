@@ -1,21 +1,118 @@
 """AI analysis module using Ollama for forex news analysis."""
 import json
 import asyncio
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 import httpx
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn
+from dataclasses import dataclass
 
 console = Console()
+
+
+@dataclass
+class AnalystProfile:
+    """Defines an AI analyst's personality and behavior."""
+    name: str
+    role: str
+    personality: str
+    model: str
+    temperature: float
+    focus_area: str
+    
+    
+class AIAnalystTeam:
+    """Defines the team of junior analysts with diverse perspectives."""
+    
+    ANALYSTS = [
+        AnalystProfile(
+            name="Marcus (Conservative)",
+            role="Risk Management Specialist",
+            personality="Conservative, risk-averse, focuses on downside protection",
+            model="llama3.2:latest",
+            temperature=0.3,
+            focus_area="Risk assessment and capital preservation"
+        ),
+        AnalystProfile(
+            name="Sarah (Technical)",
+            role="Technical Analysis Expert",
+            personality="Data-driven, pattern-focused, relies on technical indicators",
+            model="qwen2.5:latest",
+            temperature=0.5,
+            focus_area="Chart patterns, support/resistance levels, technical signals"
+        ),
+        AnalystProfile(
+            name="James (Aggressive)",
+            role="Momentum Trader",
+            personality="Aggressive, opportunity-seeking, high-conviction trades",
+            model="mistral:latest",
+            temperature=0.8,
+            focus_area="High-probability momentum plays and breakouts"
+        ),
+        AnalystProfile(
+            name="Elena (Fundamental)",
+            role="Economic Policy Analyst",
+            personality="Fundamental-focused, macro-economic perspective, central bank watcher",
+            model="llama3.2:latest",
+            temperature=0.4,
+            focus_area="Economic indicators, central bank policy, geopolitical events"
+        ),
+        AnalystProfile(
+            name="David (Contrarian)",
+            role="Contrarian Strategist",
+            personality="Skeptical, contrarian, questions consensus views",
+            model="gemma2:latest",
+            temperature=0.7,
+            focus_area="Identifying overcrowded trades and contrary indicators"
+        ),
+        AnalystProfile(
+            name="Priya (Sentiment)",
+            role="Market Sentiment Analyst",
+            personality="Sentiment-focused, reads market mood, tracks positioning",
+            model="phi3:latest",
+            temperature=0.6,
+            focus_area="Market sentiment, trader positioning, fear/greed indicators"
+        ),
+    ]
+    
+    @classmethod
+    def get_analyst_prompt(cls, analyst: AnalystProfile) -> str:
+        """Generate a personalized prompt for each analyst."""
+        return f"""You are {analyst.name}, a {analyst.role} on a professional forex trading desk.
+
+PERSONALITY: {analyst.personality}
+YOUR FOCUS: {analyst.focus_area}
+
+Today's market news is below. Review it from YOUR unique perspective and provide YOUR professional opinion.
+
+CRITICAL REQUIREMENTS:
+- Focus on EUR/USD trading opportunities (we primarily short EUR/USD with the trend)
+- Identify SPECIFIC timing windows for potential trades (exact times in UTC/GMT)
+- Note any high-impact economic data releases with precise times
+- Flag volatility risks and time periods to avoid trading
+- We trade WITH major trends, never against them
+- Look for news-driven opportunities for small, lower-risk profits
+
+YOUR ANALYSIS MUST INCLUDE:
+1. Key news events TODAY with EXACT TIMES
+2. Your view on EUR/USD direction and timing
+3. Risk factors specific to your expertise
+4. Confidence level (Low/Medium/High) for any trade ideas
+
+NEWS DATA:
+{{{{ JSON.stringify($json.data, null, 2) }}}}
+
+REMEMBER: You're reporting to senior management. Be professional but concise. If you see nothing actionable, say so clearly."""
 
 
 class OllamaAnalyzer:
     """Handles AI analysis using Ollama models."""
     
-    def __init__(self, base_url: str, model: str, temperature: float = 0.8):
+    def __init__(self, base_url: str, model: str, temperature: float = 0.8, analyst_profile: Optional[AnalystProfile] = None):
         self.base_url = base_url.rstrip('/')
         self.model = model
         self.temperature = temperature
+        self.analyst_profile = analyst_profile
     
     async def analyze_async(self, prompt: str, data: Dict[str, Any]) -> str:
         """Send data to Ollama for analysis asynchronously."""
@@ -58,43 +155,97 @@ class OllamaAnalyzer:
 
 
 class ForexAnalysisPipeline:
-    """Orchestrates multiple AI analyses of forex news."""
+    """Orchestrates multi-tier AI analysis with junior analysts, senior synthesis, and executive review."""
     
-    ANALYSIS_PROMPT = """You are reviewing the news for squawk signals related to forex for today, below is the news, you must summarise anything that might cause volitity in the market today, and you should note the time we should be aware of. time is important, data isn't as helpful. 
+    SENIOR_SYNTHESIS_PROMPT = """You are the SENIOR TRADING MANAGER reviewing reports from your team of 6 junior analysts.
 
-Here is the news....
+Each analyst has provided their perspective on today's forex market (focusing on EUR/USD). Your job is to:
 
+1. SYNTHESIZE their views into a coherent picture
+2. IDENTIFY points of agreement and disagreement
+3. NOTE any time-specific opportunities they've flagged
+4. FILTER OUT noise and conflicting signals
+5. HIGHLIGHT consensus trade ideas with specific timing
+
+ANALYST REPORTS:
 {{ JSON.stringify($json.data, null, 2) }}
 
-Your output is sent directly to my mate on discord, so just give a brief, friendly suggestion on what to do today from a forex perspective.  We are normally looking for opportunities to short the EUR/USD so if you see some news that might be worth us looking into for that let us know, but we only really trade the news so if you don't see anything of interest you can just let us know."""
-    
-    SYNTHESIS_PROMPT = """I have several AI agents giving me their feedback on the market today. Each agent has a different perspective and temperature setting, so they may emphasize different aspects. Can you synthesize all these views into ONE clear recommendation?
+SENIOR MANAGER OUTPUT REQUIREMENTS:
+- Consolidate the key events and times mentioned by multiple analysts
+- Identify if there's consensus on EUR/USD direction
+- Note divergent views and explain why they differ
+- Recommend IF we should be watching for a trade opportunity today
+- Specify WHEN (exact time windows in UTC/GMT)
+- Keep it professional but concise - this goes to the executive committee
 
-Here are the agent analyses:
+If analysts disagree significantly, note this and explain both sides."""
 
+    EXECUTIVE_COMMITTEE_PROMPT = """You are the EXECUTIVE TRADING COMMITTEE (3 senior partners) reviewing the consolidated report from your senior manager.
+
+The senior manager has synthesized input from 6 junior analysts. Now you must make the FINAL DECISION on actionable trades.
+
+SENIOR MANAGER'S REPORT:
 {{ JSON.stringify($json.data, null, 2) }}
 
-Send me your thoughts on discord... I'll just pass them directly, so just say what you need to say... don't loose me any money. :) 
+YOUR EXECUTIVE RESPONSIBILITIES:
+1. DEBATE the merits of any proposed trades among yourselves
+2. VERIFY timing and risk/reward calculations  
+3. FILTER OUT any remaining noise or uncertain signals
+4. BUILD CONSENSUS on specific trade recommendations
+5. PROVIDE CLEAR, ACTIONABLE GUIDANCE
 
-make sure you explain any acronyms, and any risk/reward.  I am new to this, you need to spell everything out for me.  base my actions on £100 investment, not leveraged. so if I trade, and we make a short, what would I gain/loose or risk in raw pound notes. give me the odds, in a clear and understandable way. 
+OUTPUT FORMAT FOR DISCORD (Character limit: keep it tight!):
+━━━━━━━━━━━━━━━━━━━━
+🎯 TRADING SIGNAL - [DATE]
+━━━━━━━━━━━━━━━━━━━━
 
-If the agents disagree, note that and explain the different viewpoints briefly, then give your best judgment.
+📊 CONSENSUS: [Clear Yes/No/Watch on trade opportunity]
 
-We are limited on characters though, as we're sending to discord, so follow BLUF (bottom line up front), forget niceties, and just give me what I need to know... shorter the better."""
-    
-    def __init__(self, ollama_base_url: str, models_with_temps: List[tuple[str, float]], 
-                 synthesis_model: str, synthesis_temp: float, run_concurrent: bool):
+⏰ KEY TIMES (UTC):
+[List 2-3 most critical time windows only]
+
+💹 TRADE SETUP (if applicable):
+Pair: EUR/USD
+Direction: [Long/Short]
+Entry timing: [Specific time window]
+Risk: £X on £100 position
+Reward: £Y potential
+Odds: [X%] based on [reason]
+
+⚠️ RISKS:
+[Top 2-3 risks only]
+
+🎲 EXECUTIVE DECISION:
+[Clear 2-3 sentence recommendation - what should trader DO today]
+
+━━━━━━━━━━━━━━━━━━━━
+
+CRITICAL RULES:
+- Use BLUF format (bottom line up front)
+- Explain ALL acronyms in parentheses  
+- Base risk/reward on £100 un-leveraged position
+- If consensus is "NO TRADE", say why clearly
+- If committee is divided, note the split and give majority view
+- Keep total message under 1500 characters for Discord"""
+
+    def __init__(self, ollama_base_url: str, run_concurrent: bool):
         self.ollama_base_url = ollama_base_url
-        self.models_with_temps = models_with_temps
-        self.synthesis_model = synthesis_model
-        self.synthesis_temp = synthesis_temp
         self.run_concurrent = run_concurrent
+        self.junior_analysts = AIAnalystTeam.ANALYSTS
+        # Senior and Executive use more stable, analytical models
+        self.senior_model = "llama3.2:latest"
+        self.senior_temp = 0.4
+        self.executive_model = "llama3.2:latest" 
+        self.executive_temp = 0.3  # Very conservative for final decisions
     
     def analyze_news(self, aggregated_data: Dict[str, Any]) -> str:
-        """Run multiple AI analyses and synthesize results."""
+        """Run three-tier analysis: Junior Analysts → Senior Manager → Executive Committee."""
         
         mode = "Concurrent" if self.run_concurrent else "Sequential"
-        console.print(f"\n[bold cyan]Starting AI Analysis ({mode} Mode)[/bold cyan]\n")
+        console.print(f"\n[bold cyan]Starting 3-Tier AI Analysis Pipeline ({mode} Mode)[/bold cyan]")
+        console.print(f"[dim]Tier 1: {len(self.junior_analysts)} Junior Analysts[/dim]")
+        console.print(f"[dim]Tier 2: Senior Manager Synthesis[/dim]")
+        console.print(f"[dim]Tier 3: Executive Committee Review[/dim]\n")
         
         if self.run_concurrent:
             return asyncio.run(self._analyze_news_async(aggregated_data))
@@ -102,15 +253,7 @@ We are limited on characters though, as we're sending to discord, so follow BLUF
             return self._analyze_news_sequential(aggregated_data)
     
     def _analyze_news_sequential(self, aggregated_data: Dict[str, Any]) -> str:
-        """Sequential analysis - better for Ollama instances that can't handle concurrent requests."""
-        
-        # Create analyzers with diverse models and temperatures
-        analyzers = []
-        for idx, (model, temp) in enumerate(self.models_with_temps, 1):
-            name = f"Agent {idx} ({model.split(':')[0]} @ temp={temp})"
-            analyzers.append((name, OllamaAnalyzer(self.ollama_base_url, model, temp)))
-        
-        analyses = []
+        """Sequential three-tier analysis pipeline."""
         
         with Progress(
             SpinnerColumn(),
@@ -119,42 +262,71 @@ We are limited on characters though, as we're sending to discord, so follow BLUF
             TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
             console=console
         ) as progress:
-            task = progress.add_task("[cyan]Running AI analyses sequentially...", total=len(analyzers) + 1)
+            total_steps = len(self.junior_analysts) + 2  # analysts + senior + executive
+            task = progress.add_task("[cyan]Running analysis pipeline...", total=total_steps)
             
-            # Run analyses one by one
-            for name, analyzer in analyzers:
-                progress.update(task, description=f"[cyan]{name} analyzing...")
+            # TIER 1: Junior Analysts Review
+            console.print("[bold yellow]═══ TIER 1: JUNIOR ANALYSTS ═══[/bold yellow]")
+            junior_reports = []
+            
+            for analyst in self.junior_analysts:
+                progress.update(task, description=f"[cyan]{analyst.name} analyzing...")
                 
-                # Use synchronous analyze for sequential mode
-                result = asyncio.run(analyzer.analyze_async(self.ANALYSIS_PROMPT, aggregated_data))
+                prompt = AIAnalystTeam.get_analyst_prompt(analyst)
+                analyzer = OllamaAnalyzer(
+                    self.ollama_base_url, 
+                    analyst.model, 
+                    analyst.temperature,
+                    analyst
+                )
                 
-                analyses.append({
-                    "agent": name,
+                result = asyncio.run(analyzer.analyze_async(prompt, aggregated_data))
+                
+                junior_reports.append({
+                    "analyst": analyst.name,
+                    "role": analyst.role,
+                    "focus": analyst.focus_area,
                     "output": result
                 })
                 progress.advance(task)
-                console.print(f"[green]✓[/green] {name} complete")
+                console.print(f"[green]✓[/green] {analyst.name} report complete")
             
-            # Synthesize all analyses
-            progress.update(task, description="[cyan]Synthesizing results...")
-            synthesis_data = {"data": analyses}
-            final_analyzer = OllamaAnalyzer(self.ollama_base_url, self.synthesis_model, self.synthesis_temp)
-            final_result = asyncio.run(final_analyzer.analyze_async(self.SYNTHESIS_PROMPT, synthesis_data))
+            # TIER 2: Senior Manager Synthesis
+            console.print("\n[bold yellow]═══ TIER 2: SENIOR MANAGER ═══[/bold yellow]")
+            progress.update(task, description="[cyan]Senior Manager synthesizing reports...")
+            
+            senior_data = {"data": junior_reports}
+            senior_analyzer = OllamaAnalyzer(
+                self.ollama_base_url,
+                self.senior_model,
+                self.senior_temp
+            )
+            senior_report = asyncio.run(
+                senior_analyzer.analyze_async(self.SENIOR_SYNTHESIS_PROMPT, senior_data)
+            )
             progress.advance(task)
-            console.print(f"[green]✓[/green] Synthesis complete\n")
+            console.print(f"[green]✓[/green] Senior Manager synthesis complete")
+            
+            # TIER 3: Executive Committee Final Review
+            console.print("\n[bold yellow]═══ TIER 3: EXECUTIVE COMMITTEE ═══[/bold yellow]")
+            progress.update(task, description="[cyan]Executive Committee deliberating...")
+            
+            executive_data = {"data": {"senior_report": senior_report, "analyst_count": len(junior_reports)}}
+            executive_analyzer = OllamaAnalyzer(
+                self.ollama_base_url,
+                self.executive_model,
+                self.executive_temp
+            )
+            final_decision = asyncio.run(
+                executive_analyzer.analyze_async(self.EXECUTIVE_COMMITTEE_PROMPT, executive_data)
+            )
+            progress.advance(task)
+            console.print(f"[green]✓[/green] Executive Committee decision complete\n")
         
-        return final_result
+        return final_decision
     
     async def _analyze_news_async(self, aggregated_data: Dict[str, Any]) -> str:
-        """Concurrent analysis - faster but requires Ollama to handle parallel requests."""
-        
-        # Create analyzers with diverse models and temperatures
-        analyzers = []
-        for idx, (model, temp) in enumerate(self.models_with_temps, 1):
-            name = f"Agent {idx} ({model.split(':')[0]} @ temp={temp})"
-            analyzers.append((name, OllamaAnalyzer(self.ollama_base_url, model, temp)))
-        
-        analyses = []
+        """Concurrent three-tier analysis pipeline."""
         
         with Progress(
             SpinnerColumn(),
@@ -163,42 +335,81 @@ We are limited on characters though, as we're sending to discord, so follow BLUF
             TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
             console=console
         ) as progress:
-            task = progress.add_task("[cyan]Running AI analyses concurrently...", total=len(analyzers) + 1)
+            total_steps = len(self.junior_analysts) + 2
+            task = progress.add_task("[cyan]Running analysis pipeline...", total=total_steps)
             
-            # Create async tasks for all agents
-            agent_tasks = []
-            for name, analyzer in analyzers:
-                agent_tasks.append(self._run_agent_analysis(name, analyzer, aggregated_data))
+            # TIER 1: Junior Analysts Review (Concurrent)
+            console.print("[bold yellow]═══ TIER 1: JUNIOR ANALYSTS (CONCURRENT) ═══[/bold yellow]")
+            console.print(f"[dim]Running {len(self.junior_analysts)} analysts in parallel...[/dim]")
             
-            # Run all agent analyses concurrently
-            console.print(f"[dim]Running {len(analyzers)} agents in parallel...[/dim]")
-            agent_results = await asyncio.gather(*agent_tasks, return_exceptions=True)
+            analyst_tasks = []
+            for analyst in self.junior_analysts:
+                prompt = AIAnalystTeam.get_analyst_prompt(analyst)
+                analyzer = OllamaAnalyzer(
+                    self.ollama_base_url,
+                    analyst.model,
+                    analyst.temperature,
+                    analyst
+                )
+                analyst_tasks.append(
+                    self._run_junior_analyst(analyst, analyzer, prompt, aggregated_data)
+                )
             
-            # Collect results
-            for result in agent_results:
+            # Run all junior analysts concurrently
+            analyst_results = await asyncio.gather(*analyst_tasks, return_exceptions=True)
+            
+            junior_reports = []
+            for result in analyst_results:
                 if isinstance(result, Exception):
-                    console.print(f"[red]✗[/red] Agent failed: {str(result)}")
+                    console.print(f"[red]✗[/red] Analyst failed: {str(result)}")
                     continue
-                    
-                name, output = result
-                analyses.append({
-                    "agent": name,
+                
+                analyst_name, analyst_role, focus_area, output = result
+                junior_reports.append({
+                    "analyst": analyst_name,
+                    "role": analyst_role,
+                    "focus": focus_area,
                     "output": output
                 })
                 progress.advance(task, advance=1)
-                console.print(f"[green]✓[/green] {name} complete")
+                console.print(f"[green]✓[/green] {analyst_name} report complete")
             
-            # Synthesize all analyses
-            progress.update(task, description="[cyan]Synthesizing results...")
-            synthesis_data = {"data": analyses}
-            final_analyzer = OllamaAnalyzer(self.ollama_base_url, self.synthesis_model, self.synthesis_temp)
-            final_result = await final_analyzer.analyze_async(self.SYNTHESIS_PROMPT, synthesis_data)
+            # TIER 2: Senior Manager Synthesis
+            console.print("\n[bold yellow]═══ TIER 2: SENIOR MANAGER ═══[/bold yellow]")
+            progress.update(task, description="[cyan]Senior Manager synthesizing reports...")
+            
+            senior_data = {"data": junior_reports}
+            senior_analyzer = OllamaAnalyzer(
+                self.ollama_base_url,
+                self.senior_model,
+                self.senior_temp
+            )
+            senior_report = await senior_analyzer.analyze_async(
+                self.SENIOR_SYNTHESIS_PROMPT, senior_data
+            )
             progress.advance(task)
-            console.print(f"[green]✓[/green] Synthesis complete\n")
+            console.print(f"[green]✓[/green] Senior Manager synthesis complete")
+            
+            # TIER 3: Executive Committee Final Review
+            console.print("\n[bold yellow]═══ TIER 3: EXECUTIVE COMMITTEE ═══[/bold yellow]")
+            progress.update(task, description="[cyan]Executive Committee deliberating...")
+            
+            executive_data = {"data": {"senior_report": senior_report, "analyst_count": len(junior_reports)}}
+            executive_analyzer = OllamaAnalyzer(
+                self.ollama_base_url,
+                self.executive_model,
+                self.executive_temp
+            )
+            final_decision = await executive_analyzer.analyze_async(
+                self.EXECUTIVE_COMMITTEE_PROMPT, executive_data
+            )
+            progress.advance(task)
+            console.print(f"[green]✓[/green] Executive Committee decision complete\n")
         
-        return final_result
+        return final_decision
     
-    async def _run_agent_analysis(self, name: str, analyzer: OllamaAnalyzer, data: Dict[str, Any]) -> tuple:
-        """Run a single agent analysis asynchronously."""
-        result = await analyzer.analyze_async(self.ANALYSIS_PROMPT, data)
-        return (name, result)
+    async def _run_junior_analyst(self, analyst: AnalystProfile, analyzer: OllamaAnalyzer, 
+                                   prompt: str, data: Dict[str, Any]) -> tuple:
+        """Run a single junior analyst analysis asynchronously."""
+        result = await analyzer.analyze_async(prompt, data)
+        return (analyst.name, analyst.role, analyst.focus_area, result)

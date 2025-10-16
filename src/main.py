@@ -20,9 +20,6 @@ class SquawkWorkflow:
         self.rss_aggregator = RSSFeedAggregator()
         self.ai_pipeline = ForexAnalysisPipeline(
             ollama_base_url=settings.ollama_base_url,
-            models_with_temps=settings.get_ai_models(),
-            synthesis_model=settings.synthesis_model,
-            synthesis_temp=settings.synthesis_temperature,
             run_concurrent=settings.run_concurrent
         )
         self.discord_sender = DiscordSender(
